@@ -2,6 +2,8 @@
 #include <cstring>
 #include "sockets-cpp/UdpMcast.h"
 
+namespace sockets {
+
 UdpMcast::UdpMcast(const char* mcastAddr, uint16_t port, ISocket *callback):
     m_addr(mcastAddr),
     m_port(port),
@@ -31,3 +33,5 @@ UdpMcast::~UdpMcast()
 {
     
 }
+
+}   // Namespace sockets

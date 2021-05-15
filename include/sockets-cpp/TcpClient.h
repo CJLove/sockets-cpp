@@ -1,21 +1,23 @@
 #pragma once
 
+#include "ISocket.h"
+#include <arpa/inet.h>
+#include <errno.h>
 #include <iostream>
+#include <netdb.h>
+#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
-#include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <netdb.h>
+#include <sys/types.h>
+#include <thread>
+#include <unistd.h>
 #include <vector>
-#include <errno.h>
-#include <thread>
-#include <thread>
-#include "ISocket.h"
+
+namespace sockets {
+
+    using sockets::ISocket;
 
 class TcpClient {
 public:
@@ -25,12 +27,13 @@ public:
 
     SocketRet connectTo(const char *remoteIp, uint16_t remotePort);
 
-    SocketRet sendMsg(const unsigned char * msg, size_t size);
+    SocketRet sendMsg(const unsigned char *msg, size_t size);
 
     SocketRet finish();
+
 private:
-    void publishServerMsg(const unsigned char * msg, size_t msgSize);
-    void publishDisconnected(const SocketRet & ret);
+    void publishServerMsg(const unsigned char *msg, size_t msgSize);
+    void publishDisconnected(const SocketRet &ret);
     void ReceiveTask();
     void terminateReceiveThread();
 
@@ -40,3 +43,5 @@ private:
     std::thread *m_receiveTask = nullptr;
     ISocket *m_callback = nullptr;
 };
+
+}   // Namespace sockets

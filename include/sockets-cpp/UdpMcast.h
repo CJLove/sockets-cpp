@@ -6,6 +6,10 @@
 #include <cstdint>
 #include "ISocket.h"
 
+namespace sockets {
+
+    using sockets::ISocket;
+
 class UdpMcast: public ISocket {
 public:
     UdpMcast(const char* mcastAddr, uint16_t port, ISocket *callback);
@@ -26,3 +30,5 @@ private:
     ISocket *m_callback;
     std::thread m_thread;
 };
+
+}   // Namespace sockets

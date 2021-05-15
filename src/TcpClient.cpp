@@ -2,6 +2,8 @@
 
 #define MAX_PACKET_SIZE 4096
 
+namespace sockets {
+
 TcpClient::TcpClient(ISocket *callback): m_callback(callback)
 {}
 
@@ -124,3 +126,5 @@ void TcpClient::terminateReceiveThread() {
         m_receiveTask = nullptr;
     }
 }
+
+}   // Namespace sockets

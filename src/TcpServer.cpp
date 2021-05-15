@@ -2,6 +2,8 @@
 
 #define MAX_PACKET_SIZE 65536
 
+namespace sockets {
+
 Client::~Client() {
     if (m_threadHandler != nullptr) {
         m_threadHandler->detach();
@@ -200,3 +202,4 @@ SocketRet TcpServer::finish() {
     return ret;
 }
 
+}   // Namespace sockets

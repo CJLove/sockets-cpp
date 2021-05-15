@@ -1,6 +1,8 @@
 #pragma once
-#include <string>
 #include <memory>
+#include <string>
+
+namespace sockets {
 
 struct SocketRet {
     bool m_success;
@@ -19,3 +21,4 @@ public:
     virtual void onDisconnect(const SocketRet &ret) = 0;
 };
 
+}   // Namespace sockets
