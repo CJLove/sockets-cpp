@@ -83,8 +83,6 @@ public:
 
     bool deleteClient(Client &client);
 
-    SocketRet sendMsg(const unsigned char *msg, size_t size);
-
     SocketRet sendBcast(const unsigned char*msg, size_t size);
 
     SocketRet finish();

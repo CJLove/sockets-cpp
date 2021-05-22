@@ -178,28 +178,6 @@ Client TcpServer::acceptClient(uint timeout) {
     return newClient;
 }
 
-SocketRet TcpServer::sendMsg(const unsigned char *msg, size_t size) {
-    SocketRet ret;
-    if (!m_clients.empty()) {
-        Client *client = &m_clients.back();
-        int numBytesSent = send(client->getFileDescriptor(), (char *)msg, size, 0);
-        if (numBytesSent < 0) {  // send failed
-            ret.m_success = false;
-            ret.m_msg = strerror(errno);
-            return ret;
-        }
-        if ((uint)numBytesSent < size) {  // not all bytes were sent
-            ret.m_success = false;
-            char msg[100];
-            sprintf(msg, "Only %d bytes out of %lu was sent to client", numBytesSent, size);
-            ret.m_msg = msg;
-            return ret;
-        }
-    }
-    ret.m_success = true;
-    return ret;
-}
-
 SocketRet TcpServer::sendBcast(const unsigned char*msg, size_t size)
 {
     SocketRet ret;
