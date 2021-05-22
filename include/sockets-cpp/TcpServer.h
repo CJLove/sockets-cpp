@@ -17,13 +17,13 @@
 
 namespace sockets {
 
-    using sockets::ISocket;
+using sockets::ISocket;
 
 class Client {
     int m_sockfd = 0;
     std::string m_ip = "";
     std::string m_errorMsg = "";
-    bool m_isConnected;
+    bool m_isConnected = false;
     std::thread *m_threadHandler = nullptr;
 
 public:
@@ -96,4 +96,4 @@ private:
     ISocket *m_callback;
 };
 
-}   // Namespace sockets
+}  // Namespace sockets

@@ -17,7 +17,7 @@
 
 namespace sockets {
 
-    using sockets::ISocket;
+using sockets::ISocket;
 
 class TcpClient {
 public:
@@ -44,4 +44,4 @@ private:
     ISocket *m_callback = nullptr;
 };
 
-}   // Namespace sockets
+}  // Namespace sockets

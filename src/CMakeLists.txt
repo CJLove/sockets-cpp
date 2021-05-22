@@ -3,7 +3,8 @@ cmake_minimum_required(VERSION 3.1)
 project(sockets-cpp)
 
 include_directories( 
-    ../include 
+    ../include
+    ../include/sockets-cpp
     .
 )
 

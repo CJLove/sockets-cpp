@@ -21,4 +21,4 @@ public:
     virtual void onDisconnect(const SocketRet &ret) = 0;
 };
 
-}   // Namespace sockets
+}  // Namespace sockets

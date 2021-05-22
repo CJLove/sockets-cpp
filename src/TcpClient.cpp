@@ -1,4 +1,4 @@
-#include "sockets-cpp/TcpClient.h"
+#include "TcpClient.h"
 
 #define MAX_PACKET_SIZE 4096
 

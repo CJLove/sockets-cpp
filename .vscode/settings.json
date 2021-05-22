@@ -2,6 +2,7 @@
     "keyboard.dispatch": "keyCode",
     "cmake.configureOnOpen": true,
     "clang-tidy.buildPath": "${workspaceFolder}/build/compile_commands.json",
+    "clang-tidy.compilerArgs": ["-extra-arg=-stdlib=libstdc++"],
     "C_Cpp.configurationWarnings": "Disabled",
     "files.associations": {
         "vector": "cpp",
@@ -73,6 +74,10 @@
         "valarray": "cpp",
         "variant": "cpp",
         "cassert": "cpp",
-        "mutex": "cpp"
+        "mutex": "cpp",
+        "compare": "cpp",
+        "concepts": "cpp",
+        "ranges": "cpp",
+        "stop_token": "cpp"
     }
 }
