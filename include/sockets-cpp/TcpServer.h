@@ -20,12 +20,6 @@ namespace sockets {
 using sockets::ISocket;
 
 class Client {
-    int m_sockfd = 0;
-    std::string m_ip = "";
-    std::string m_errorMsg = "";
-    bool m_isConnected = false;
-    std::thread *m_threadHandler = nullptr;
-
 public:
     ~Client();
     bool operator==(const Client &other);
@@ -65,6 +59,15 @@ public:
     void setThreadHandler(std::function<void(void)> func) {
         m_threadHandler = new std::thread(func);
     }
+
+    SocketRet sendMsg(const unsigned char *msg, size_t size);
+
+private:
+    int m_sockfd = 0;
+    std::string m_ip = "";
+    std::string m_errorMsg = "";
+    bool m_isConnected = false;
+    std::thread *m_threadHandler = nullptr;
 };
 
 class TcpServer {
@@ -76,6 +79,7 @@ public:
     SocketRet start(uint16_t port);
 
     Client acceptClient(uint32_t timeout);
+
     bool deleteClient(Client &client);
 
     SocketRet sendMsg(const unsigned char *msg, size_t size);

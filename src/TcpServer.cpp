@@ -19,10 +19,33 @@ bool Client::operator==(const Client &other) {
     return false;
 }
 
+SocketRet Client::sendMsg(const unsigned char *msg, size_t size)
+{
+    SocketRet ret;
+    if (m_sockfd) {
+        int numBytesSent = send(m_sockfd, (char *)msg, size, 0);
+        if (numBytesSent < 0) {  // send failed
+            ret.m_success = false;
+            ret.m_msg = strerror(errno);
+            return ret;
+        }
+        if ((uint)numBytesSent < size) {  // not all bytes were sent
+            ret.m_success = false;
+            char msg[100];
+            sprintf(msg, "Only %d bytes out of %lu was sent to client", numBytesSent, size);
+            ret.m_msg = msg;
+            return ret;
+        }
+    }
+    ret.m_success = true;
+    return ret;  
+}
+
 TcpServer::TcpServer(ISocket *callback) : m_callback(callback) {
 }
 
 TcpServer::~TcpServer() {
+    finish();
 }
 
 void TcpServer::receiveTask(/*TcpServer *context*/) {
@@ -122,7 +145,7 @@ Client TcpServer::acceptClient(uint timeout) {
 
     if (timeout > 0) {
         struct timeval tv;
-        tv.tv_sec = 2;
+        tv.tv_sec = 1;
         tv.tv_usec = 0;
         FD_ZERO(&m_fds);
         FD_SET(m_sockfd, &m_fds);

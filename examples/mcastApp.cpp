@@ -8,7 +8,7 @@ public:
     // UDP Multicast
     McastApp(const char *multicastAddr, uint16_t port);
 
-    ~McastApp();
+    virtual ~McastApp();
 
     void onReceiveData(const unsigned char *data, size_t size) override;
 
@@ -75,14 +75,15 @@ int main(int argc, char **argv) {
         }
     }
 
-    McastApp *app = new McastApp(addr, port);
+    auto *app = new McastApp(addr, port);
 
     while (true) {
         std::string data;
         std::cout << "Data >";
         std::cin >> data;
-        if (data == "quit")
+        if (data == "quit") {
             break;
+        }
         app->sendMsg(reinterpret_cast<const unsigned char *>(data.data()), data.size());
     }
 

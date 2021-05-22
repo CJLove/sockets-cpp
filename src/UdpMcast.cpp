@@ -13,6 +13,11 @@ namespace sockets {
 UdpMcast::UdpMcast(ISocket *callback) : m_fd(-1), m_callback(callback), m_thread(&UdpMcast::ReceiveTask, this) {
 }
 
+UdpMcast::~UdpMcast() {
+    m_stop = true;
+    m_thread.detach();
+}
+
 SocketRet UdpMcast::start(const char *mcastAddr, uint16_t port) {
     SocketRet ret;
     if ((m_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
@@ -61,10 +66,7 @@ SocketRet UdpMcast::start(const char *mcastAddr, uint16_t port) {
     return ret;
 }
 
-UdpMcast::~UdpMcast() {
-    m_stop = true;
-    m_thread.join();
-}
+
 
 void UdpMcast::publishServerMsg(const unsigned char *msg, size_t msgSize) {
     if (m_callback) {
