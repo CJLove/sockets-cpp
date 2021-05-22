@@ -19,3 +19,7 @@ target_link_libraries( serverApp sockets-cpp pthread )
 set (mcastApp_SRC mcastApp.cpp)
 add_executable( mcastApp ${mcastApp_SRC} )
 target_link_libraries( mcastApp sockets-cpp pthread )
+
+set (unicastApp_SRC unicastApp.cpp)
+add_executable( unicastApp ${unicastApp_SRC} )
+target_link_libraries( unicastApp sockets-cpp pthread )

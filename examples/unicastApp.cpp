@@ -36,8 +36,8 @@ void UnicastApp::sendMsg(const unsigned char *data, size_t len) {
     }
 }
 
-void UnicastApp::onReceiveData(const unsigned char *data, size_t ) {
-    std::string str(reinterpret_cast<const char *>(data));
+void UnicastApp::onReceiveData(const unsigned char *data, size_t size) {
+    std::string str(reinterpret_cast<const char *>(data),size);
 
     std::cout << "Received: " << str << "\n";
 }

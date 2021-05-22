@@ -48,8 +48,9 @@ TcpServer::~TcpServer() {
     finish();
 }
 
-void TcpServer::receiveTask(/*TcpServer *context*/) {
-
+void TcpServer::receiveTask() {
+    // Note: new client has just been added to the end of m_clients at the time
+    // this new thread has been started
     Client *client = &m_clients.back();
 
     while (client->isConnected()) {
@@ -74,7 +75,7 @@ void TcpServer::receiveTask(/*TcpServer *context*/) {
 
 bool TcpServer::deleteClient(Client &client) {
     int clientIndex = -1;
-    for (uint i = 0; i < m_clients.size(); i++) {
+    for (auto i = 0; i < m_clients.size(); i++) {
         if (m_clients[i] == client) {
             clientIndex = i;
             break;
@@ -89,7 +90,7 @@ bool TcpServer::deleteClient(Client &client) {
 
 void TcpServer::publishClientMsg(const Client &client, const unsigned char *msg, size_t msgSize) {
     if (m_callback) {
-        m_callback->onReceiveData(msg, msgSize);
+        m_callback->onReceiveClientData(client, msg, msgSize);
     }
 }
 
@@ -98,7 +99,7 @@ void TcpServer::publishDisconnected(const Client &client) {
         SocketRet ret;
         ret.m_msg = client.getInfoMessage();
 
-        m_callback->onDisconnect(ret);
+        m_callback->onClientDisconnect(client, ret);
     }
 }
 
@@ -196,6 +197,21 @@ SocketRet TcpServer::sendMsg(const unsigned char *msg, size_t size) {
         }
     }
     ret.m_success = true;
+    return ret;
+}
+
+SocketRet TcpServer::sendBcast(const unsigned char*msg, size_t size)
+{
+    SocketRet ret;
+    ret.m_success = true;
+    for ( auto &client: m_clients) {
+        auto clientRet = client.sendMsg(msg,size);
+        ret.m_success &= clientRet.m_success;
+        if (!clientRet.m_success) {
+            ret.m_msg = clientRet.m_msg;
+            break;
+        }
+    }
     return ret;
 }
 

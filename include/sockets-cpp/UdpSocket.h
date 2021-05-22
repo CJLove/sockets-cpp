@@ -25,7 +25,7 @@ public:
     SocketRet finish();
 
 private:
-    void publishServerMsg(const unsigned char *msg, size_t msgSize);
+    void publishUdpMsg(const unsigned char *msg, size_t msgSize);
     void publishDisconnected(const SocketRet &ret);
     void ReceiveTask();
 

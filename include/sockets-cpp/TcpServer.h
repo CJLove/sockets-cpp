@@ -41,6 +41,7 @@ public:
     void setErrorMessage(const std::string &msg) {
         m_errorMsg = msg;
     }
+
     std::string getInfoMessage() const {
         return m_errorMsg;
     }
@@ -84,12 +85,14 @@ public:
 
     SocketRet sendMsg(const unsigned char *msg, size_t size);
 
+    SocketRet sendBcast(const unsigned char*msg, size_t size);
+
     SocketRet finish();
 
 private:
     void publishClientMsg(const Client &client, const unsigned char *msg, size_t msgSize);
     void publishDisconnected(const Client &client);
-    void receiveTask(/*void * context*/);
+    void receiveTask();
 
     int m_sockfd;
     struct sockaddr_in m_serverAddress;

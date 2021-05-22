@@ -15,7 +15,7 @@ endif (BUILD_COVERAGE)
 set (sockets-cpp_SRC
     TcpClient.cpp
     TcpServer.cpp
-    UdpMcast.cpp
+    UdpSocket.cpp
 )
 
 if(BUILD_SHARED_LIBS)

@@ -104,7 +104,7 @@ SocketRet UdpSocket::startUnicast(const char *remoteAddr, uint16_t localPort, ui
     return ret; 
 }
 
-void UdpSocket::publishServerMsg(const unsigned char *msg, size_t msgSize) {
+void UdpSocket::publishUdpMsg(const unsigned char *msg, size_t msgSize) {
     if (m_callback) {
         m_callback->onReceiveData(msg, msgSize);
     }
@@ -134,7 +134,7 @@ void UdpSocket::ReceiveTask() {
                 finish();
                 break;
             } else {
-                publishServerMsg(msg, numOfBytesReceived);
+                publishUdpMsg(msg, numOfBytesReceived);
             }
         }
     }

@@ -4,6 +4,8 @@
 
 namespace sockets {
 
+class Client;
+
 struct SocketRet {
     bool m_success;
     std::string m_msg;
@@ -13,12 +15,28 @@ struct SocketRet {
     }
 };
 
-// Interface class for receiving data or disconnection notification from a socket
+// Interface class for receiving data or disconnection notification from socket
+// classes
 class ISocket {
 public:
-    virtual void onReceiveData(const unsigned char *data, size_t size) = 0;
+    virtual ~ISocket() = default;
 
-    virtual void onDisconnect(const SocketRet &ret) = 0;
+    virtual void onReceiveData(const unsigned char *data, size_t size)
+    {
+    }
+
+    virtual void onReceiveClientData(const Client &client, const unsigned char *data, size_t size)
+    {
+    }
+
+    virtual void onDisconnect(const SocketRet &ret)
+    {
+    }
+
+    virtual void onClientDisconnect(const Client &client, const SocketRet &ret)
+    {
+    }
+
 };
 
 }  // Namespace sockets

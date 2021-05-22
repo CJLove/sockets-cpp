@@ -1,5 +1,5 @@
 #include "ISocket.h"
-#include "UdpMcast.h"
+#include "UdpSocket.h"
 #include <iostream>
 #include <unistd.h>
 
@@ -17,11 +17,11 @@ public:
     void sendMsg(const unsigned char *data, size_t len);
 
 private:
-    sockets::UdpMcast m_mcast;
+    sockets::UdpSocket m_mcast;
 };
 
 McastApp::McastApp(const char *multicastAddr, uint16_t port) : m_mcast(this) {
-    sockets::SocketRet ret = m_mcast.start(multicastAddr, port);
+    sockets::SocketRet ret = m_mcast.startMcast(multicastAddr, port);
     if (ret.m_success) {
         std::cout << "Connected to mcast group " << multicastAddr << ":" << port << "\n";
     } else {
@@ -36,8 +36,8 @@ void McastApp::sendMsg(const unsigned char *data, size_t len) {
     }
 }
 
-void McastApp::onReceiveData(const unsigned char *data, size_t ) {
-    std::string str(reinterpret_cast<const char *>(data));
+void McastApp::onReceiveData(const unsigned char *data, size_t size) {
+    std::string str(reinterpret_cast<const char *>(data),size);
 
     std::cout << "Received: " << str << "\n";
 }
