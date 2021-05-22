@@ -1,0 +1,88 @@
+#include "ISocket.h"
+#include "UdpSocket.h"
+#include <iostream>
+#include <unistd.h>
+
+class UnicastApp : public sockets::ISocket {
+public:
+    // UDP Multicast
+    UnicastApp(const char *remoteAddr, uint16_t localPort, uint16_t port);
+
+    virtual ~UnicastApp() = default;
+
+    void onReceiveData(const unsigned char *data, size_t size) override;
+
+    void onDisconnect(const sockets::SocketRet &ret) override;
+
+    void sendMsg(const unsigned char *data, size_t len);
+
+private:
+    sockets::UdpSocket m_unicast;
+};
+
+UnicastApp::UnicastApp(const char *remoteAddr, uint16_t localPort, uint16_t port) : m_unicast(this) {
+    sockets::SocketRet ret = m_unicast.startUnicast(remoteAddr, localPort, port);
+    if (ret.m_success) {
+        std::cout << "Listening on UDP 0.0.0.0:" << localPort << " sending to " << remoteAddr << ":" << port << "\n";
+    } else {
+        std::cout << "Error: " << ret.m_msg << "\n";
+    }
+}
+
+void UnicastApp::sendMsg(const unsigned char *data, size_t len) {
+    auto ret = m_unicast.sendMsg(data, len);
+    if (!ret.m_success) {
+        std::cout << "Send Error: " << ret.m_msg << "\n";
+    }
+}
+
+void UnicastApp::onReceiveData(const unsigned char *data, size_t ) {
+    std::string str(reinterpret_cast<const char *>(data));
+
+    std::cout << "Received: " << str << "\n";
+}
+
+void UnicastApp::onDisconnect(const sockets::SocketRet &ret) {
+    std::cout << "Disconnect: " << ret.m_msg << "\n";
+}
+
+void usage() {
+    std::cout << "UnicastApp -a <remoteAddr> -l <localPort> -p <port>\n";
+}
+
+int main(int argc, char **argv) {
+    int c = 0;
+    const char *addr = nullptr;
+    uint16_t port = 0;
+    uint16_t localPort = 0;
+    while ((c = getopt(argc, argv, "a:l:p:?")) != EOF) {
+        switch (c) {
+        case 'a':
+            addr = optarg;
+            break;
+        case 'l':
+            localPort = static_cast<uint16_t>(std::stoul(optarg));
+            break;
+        case 'p':
+            port = static_cast<uint16_t>(std::stoul(optarg));
+            break;
+        case '?':
+            usage();
+            exit(1);
+        }
+    }
+
+    auto *app = new UnicastApp(addr, localPort, port);
+
+    while (true) {
+        std::string data;
+        std::cout << "Data >";
+        std::getline(std::cin, data);
+        if (data == "quit") {
+            break;
+        }
+        app->sendMsg(reinterpret_cast<const unsigned char *>(data.data()), data.size());
+    }
+
+    delete app;
+}
