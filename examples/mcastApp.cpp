@@ -8,7 +8,7 @@ public:
     // UDP Multicast
     McastApp(const char *multicastAddr, uint16_t port);
 
-    virtual ~McastApp();
+    virtual ~McastApp() = default;
 
     void onReceiveData(const unsigned char *data, size_t size) override;
 
@@ -17,11 +17,11 @@ public:
     void sendMsg(const unsigned char *data, size_t len);
 
 private:
-    sockets::UdpMcast *m_mcast;
+    sockets::UdpMcast m_mcast;
 };
 
-McastApp::McastApp(const char *multicastAddr, uint16_t port) : m_mcast(new sockets::UdpMcast(this)) {
-    sockets::SocketRet ret = m_mcast->start(multicastAddr, port);
+McastApp::McastApp(const char *multicastAddr, uint16_t port) : m_mcast(this) {
+    sockets::SocketRet ret = m_mcast.start(multicastAddr, port);
     if (ret.m_success) {
         std::cout << "Connected to mcast group " << multicastAddr << ":" << port << "\n";
     } else {
@@ -29,21 +29,14 @@ McastApp::McastApp(const char *multicastAddr, uint16_t port) : m_mcast(new socke
     }
 }
 
-McastApp::~McastApp() {
-    if (m_mcast)
-        delete m_mcast;
-}
-
 void McastApp::sendMsg(const unsigned char *data, size_t len) {
-    if (m_mcast) {
-        auto ret = m_mcast->sendMsg(data, len);
-        if (!ret.m_success) {
-            std::cout << "Send Error: " << ret.m_msg << "\n";
-        }
+    auto ret = m_mcast.sendMsg(data, len);
+    if (!ret.m_success) {
+        std::cout << "Send Error: " << ret.m_msg << "\n";
     }
 }
 
-void McastApp::onReceiveData(const unsigned char *data, size_t size) {
+void McastApp::onReceiveData(const unsigned char *data, size_t ) {
     std::string str(reinterpret_cast<const char *>(data));
 
     std::cout << "Received: " << str << "\n";
@@ -67,7 +60,7 @@ int main(int argc, char **argv) {
             addr = optarg;
             break;
         case 'p':
-            port = std::stoi(optarg);
+            port = static_cast<uint16_t>(std::stoul(optarg));
             break;
         case '?':
             usage();
@@ -80,7 +73,7 @@ int main(int argc, char **argv) {
     while (true) {
         std::string data;
         std::cout << "Data >";
-        std::cin >> data;
+        std::getline(std::cin, data);
         if (data == "quit") {
             break;
         }

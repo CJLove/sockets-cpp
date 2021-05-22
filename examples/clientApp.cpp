@@ -7,7 +7,7 @@ public:
     // TCP Client
     ClientApp(const char *remoteIp, uint16_t port);
 
-    virtual ~ClientApp();
+    virtual ~ClientApp() = default;
 
     void onReceiveData(const unsigned char *data, size_t size) override;
 
@@ -16,12 +16,12 @@ public:
     void sendMsg(const unsigned char *data, size_t len);
 
 private:
-    sockets::TcpClient *m_client;
+    sockets::TcpClient m_client;
 };
 
-ClientApp::ClientApp(const char *remoteIp, uint16_t port) : m_client(new sockets::TcpClient(this)) {
+ClientApp::ClientApp(const char *remoteIp, uint16_t port) : m_client(this) {
     while (true) {
-        sockets::SocketRet ret = m_client->connectTo(remoteIp, port);
+        sockets::SocketRet ret = m_client.connectTo(remoteIp, port);
         if (ret.m_success) {
             std::cout << "Connected to " << remoteIp << ":" << port << "\n";
             break;
@@ -31,21 +31,14 @@ ClientApp::ClientApp(const char *remoteIp, uint16_t port) : m_client(new sockets
     }
 }
 
-ClientApp::~ClientApp() {
-    if (m_client)
-        delete m_client;
-}
-
 void ClientApp::sendMsg(const unsigned char *data, size_t len) {
-    if (m_client) {
-        auto ret = m_client->sendMsg(data, len);
-        if (!ret.m_success) {
-            std::cout << "Send Error: " << ret.m_msg << "\n";
-        }
+    auto ret = m_client.sendMsg(data, len);
+    if (!ret.m_success) {
+        std::cout << "Send Error: " << ret.m_msg << "\n";
     }
 }
 
-void ClientApp::onReceiveData(const unsigned char *data, size_t) {
+void ClientApp::onReceiveData(const unsigned char *data, size_t ) {
     std::string str(reinterpret_cast<const char *>(data));
 
     std::cout << "Received: " << str << "\n";
@@ -82,9 +75,10 @@ int main(int argc, char **argv) {
     while (true) {
         std::string data;
         std::cout << "Data >";
-        std::cin >> data;
-        if (data == "quit")
+        std::getline(std::cin, data);
+        if (data == "quit") {
             break;
+        }
         app->sendMsg(reinterpret_cast<const unsigned char *>(data.data()), data.size());
     }
 

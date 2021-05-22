@@ -19,13 +19,12 @@ private:
     void threadEntry();
 
     bool m_stop;
-    sockets::TcpServer *m_server;
+    sockets::TcpServer m_server;
     std::thread m_thread;
 };
 
-ServerApp::ServerApp(uint16_t port)
-    : m_stop(false), m_server(new sockets::TcpServer(this)), m_thread(&ServerApp::threadEntry, this) {
-    sockets::SocketRet ret = m_server->start(port);
+ServerApp::ServerApp(uint16_t port) : m_stop(false), m_server(this), m_thread(&ServerApp::threadEntry, this) {
+    sockets::SocketRet ret = m_server.start(port);
     if (ret.m_success) {
         std::cout << "Server started on port " << port << "\n";
     } else {
@@ -33,9 +32,15 @@ ServerApp::ServerApp(uint16_t port)
     }
 }
 
+ServerApp::~ServerApp()
+{
+    m_stop = true;
+    m_thread.join();
+}
+
 void ServerApp::threadEntry() {
     while (!m_stop) {
-        sockets::Client client = m_server->acceptClient(1);
+        sockets::Client client = m_server.acceptClient(1);
         if (client.isConnected()) {
             std::cout << "Got client with IP: " << client.getIp() << "\n";
         }
@@ -44,20 +49,10 @@ void ServerApp::threadEntry() {
     }
 }
 
-ServerApp::~ServerApp() {
-    m_stop = true;
-    m_thread.join();
-    if (m_server)
-        delete m_server;
-}
-
 void ServerApp::sendMsg(const unsigned char *data, size_t len) {
-
-    if (m_server) {
-        auto ret = m_server->sendMsg(data, len);
-        if (!ret.m_success) {
-            std::cout << "Send Error: " << ret.m_msg << "\n";
-        }
+    auto ret = m_server.sendMsg(data, len);
+    if (!ret.m_success) {
+        std::cout << "Send Error: " << ret.m_msg << "\n";
     }
 }
 
@@ -94,7 +89,7 @@ int main(int argc, char **argv) {
     while (true) {
         std::string data;
         std::cout << "Data >";
-        std::cin >> data;
+        std::getline(std::cin, data);
         if (data == "quit")
             break;
         app->sendMsg(reinterpret_cast<const unsigned char *>(data.data()), data.size());
