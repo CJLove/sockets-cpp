@@ -5,10 +5,10 @@
 namespace sockets {
 
 Client::~Client() {
-    if (m_threadHandler != nullptr) {
-        m_threadHandler->detach();
-        delete m_threadHandler;
-        m_threadHandler = nullptr;
+    if (m_thread!= nullptr) {
+        m_thread->detach();
+        delete m_thread;
+        m_thread = nullptr;
     }
 }
 
@@ -23,16 +23,16 @@ SocketRet Client::sendMsg(const unsigned char *msg, size_t size)
 {
     SocketRet ret;
     if (m_sockfd) {
-        int numBytesSent = send(m_sockfd, (char *)msg, size, 0);
+        ssize_t numBytesSent = send(m_sockfd, (char *)msg, size, 0);
         if (numBytesSent < 0) {  // send failed
             ret.m_success = false;
             ret.m_msg = strerror(errno);
             return ret;
         }
-        if ((uint)numBytesSent < size) {  // not all bytes were sent
+        if (static_cast<size_t>(numBytesSent) < size) {  // not all bytes were sent
             ret.m_success = false;
             char msg[100];
-            sprintf(msg, "Only %d bytes out of %lu was sent to client", numBytesSent, size);
+            sprintf(msg, "Only %ld bytes out of %lu was sent to client", numBytesSent, size);
             ret.m_msg = msg;
             return ret;
         }
@@ -55,7 +55,7 @@ void TcpServer::receiveTask() {
 
     while (client->isConnected()) {
         unsigned char msg[MAX_PACKET_SIZE];
-        int numOfBytesReceived = recv(client->getFileDescriptor(), msg, MAX_PACKET_SIZE, 0);
+        ssize_t numOfBytesReceived = recv(client->getFileDescriptor(), msg, MAX_PACKET_SIZE, 0);
         if (numOfBytesReceived < 1) {
             client->setDisconnected();
             if (numOfBytesReceived == 0) {  // client closed connection
@@ -74,14 +74,16 @@ void TcpServer::receiveTask() {
 }
 
 bool TcpServer::deleteClient(Client &client) {
-    int clientIndex = -1;
-    for (auto i = 0; i < m_clients.size(); i++) {
+    size_t clientIndex = 0;
+    bool found = false;
+    for (size_t i = 0; i < m_clients.size(); i++) {
         if (m_clients[i] == client) {
             clientIndex = i;
+            found = true;
             break;
         }
     }
-    if (clientIndex > -1) {
+    if (found) {
         m_clients.erase(m_clients.begin() + clientIndex);
         return true;
     }

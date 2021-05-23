@@ -110,18 +110,12 @@ void UdpSocket::publishUdpMsg(const unsigned char *msg, size_t msgSize) {
     }
 }
 
-void UdpSocket::publishDisconnected(const SocketRet &ret) {
-    if (m_callback) {
-        m_callback->onDisconnect(ret);
-    }
-}
-
 void UdpSocket::ReceiveTask() {
     while (!m_stop) {
         if (m_fd != -1) {
             unsigned char msg[MAX_PACKET_SIZE];
-            int numOfBytesReceived = recv(m_fd, msg, MAX_PACKET_SIZE, 0);
-            if (numOfBytesReceived < 1) {
+            ssize_t numOfBytesReceived = recv(m_fd, msg, MAX_PACKET_SIZE, 0);
+            if (numOfBytesReceived < 0) {
                 SocketRet ret;
                 ret.m_success = false;
                 m_stop = true;
@@ -130,8 +124,6 @@ void UdpSocket::ReceiveTask() {
                 } else {
                     ret.m_msg = strerror(errno);
                 }
-                publishDisconnected(ret);
-                finish();
                 break;
             } else {
                 publishUdpMsg(msg, numOfBytesReceived);
@@ -143,16 +135,16 @@ void UdpSocket::ReceiveTask() {
 SocketRet UdpSocket::sendMsg(const unsigned char *msg, size_t size)
 {
     SocketRet ret;
-    int numBytesSent = sendto(m_fd, (void*)msg, size, 0,(struct sockaddr*)&m_sockaddr, sizeof(m_sockaddr));
+    ssize_t numBytesSent = sendto(m_fd, (void*)msg, size, 0,(struct sockaddr*)&m_sockaddr, sizeof(m_sockaddr));
     if (numBytesSent < 0 ) { // send failed
         ret.m_success = false;
         ret.m_msg = strerror(errno);
         return ret;
     }
-    if ((uint)numBytesSent < size) { // not all bytes were sent
+    if (static_cast<size_t>(numBytesSent) < size) { // not all bytes were sent
         ret.m_success = false;
         char msg[100];
-        sprintf(msg, "Only %d bytes out of %lu was sent to client", numBytesSent, size);
+        sprintf(msg, "Only %ld bytes out of %lu was sent to client", numBytesSent, size);
         ret.m_msg = msg;
         return ret;
     }

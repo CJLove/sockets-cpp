@@ -13,6 +13,7 @@ if (BUILD_COVERAGE)
 endif (BUILD_COVERAGE)
 
 set (sockets-cpp_SRC
+    ISocket.cpp
     TcpClient.cpp
     TcpServer.cpp
     UdpSocket.cpp
