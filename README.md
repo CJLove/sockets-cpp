@@ -1,9 +1,9 @@
 # sockets-cpp
 
 ## Library with socket classes:
-### TCP Client
-### TCP Server
-### UDP Multicast/Unicast
+* `TcpClient` 
+* `TcpServer`
+* `UdpSocket` - UDP Multicast/Unicast
 
 ## Sample socket apps using these classes:
 ### TCP Client
