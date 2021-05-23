@@ -12,8 +12,6 @@ public:
 
     void onReceiveData(const unsigned char *data, size_t size) override;
 
-    void onDisconnect(const sockets::SocketRet &ret) override;
-
     void sendMsg(const unsigned char *data, size_t len);
 
 private:
@@ -40,10 +38,6 @@ void McastApp::onReceiveData(const unsigned char *data, size_t size) {
     std::string str(reinterpret_cast<const char *>(data),size);
 
     std::cout << "Received: " << str << "\n";
-}
-
-void McastApp::onDisconnect(const sockets::SocketRet &ret) {
-    std::cout << "Disconnect: " << ret.m_msg << "\n";
 }
 
 void usage() {
