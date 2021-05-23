@@ -75,8 +75,8 @@ endif(NOT CMAKE_BUILD_TYPE)
 # Project options
 #---------------------------------------------------------------------------------------
 
-option(BUILD_EXAMPLES "Build examples" ON)
-option(BUILD_TESTS "Build unit tests." ON)
+option(BUILD_EXAMPLES "Build examples" OFF)
+option(BUILD_TESTS "Build unit tests." OFF)
 option(BUILD_COVERAGE "Build for code coverage." OFF)
 option(BUILD_SHARED_LIBS "Build Shared Libraries" ON)
 option(BUILD_STATIC_LIBS "Build Static Libraries" OFF)
