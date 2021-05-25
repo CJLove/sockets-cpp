@@ -129,7 +129,12 @@ int main(int argc, char **argv) {
         }
         int idx = 0;
         if (data[0] != 'B' && data[0] != 'b') {
-            idx = std::stoi(data);
+            try {
+                idx = std::stoi(data);
+            }
+            catch (...) {
+                continue;
+            }
         }
 
         app->sendMsg(idx, reinterpret_cast<const unsigned char *>(data.substr(2,data.size()-2).c_str()), data.size() - 2);

@@ -5,8 +5,11 @@
 namespace sockets {
 
 Client::~Client() {
-    if (m_thread!= nullptr) {
-        m_thread->detach();
+    if (m_thread != nullptr) {
+        if (m_thread->joinable()) {
+            m_isConnected = false;
+            m_thread->join();
+        }
         delete m_thread;
         m_thread = nullptr;
     }
@@ -19,8 +22,7 @@ bool Client::operator==(const Client &other) {
     return false;
 }
 
-SocketRet Client::sendMsg(const unsigned char *msg, size_t size)
-{
+SocketRet Client::sendMsg(const unsigned char *msg, size_t size) {
     SocketRet ret;
     if (m_sockfd) {
         ssize_t numBytesSent = send(m_sockfd, (char *)msg, size, 0);
@@ -38,7 +40,7 @@ SocketRet Client::sendMsg(const unsigned char *msg, size_t size)
         }
     }
     ret.m_success = true;
-    return ret;  
+    return ret;
 }
 
 TcpServer::TcpServer(ISocket *callback) : m_callback(callback) {
@@ -54,21 +56,38 @@ void TcpServer::receiveTask() {
     Client *client = &m_clients.back();
 
     while (client->isConnected()) {
-        unsigned char msg[MAX_PACKET_SIZE];
-        ssize_t numOfBytesReceived = recv(client->getFileDescriptor(), msg, MAX_PACKET_SIZE, 0);
-        if (numOfBytesReceived < 1) {
-            client->setDisconnected();
-            if (numOfBytesReceived == 0) {  // client closed connection
-                client->setErrorMessage("Client closed connection");
-            } else {
-                client->setErrorMessage(strerror(errno));
+        fd_set fds;
+        struct timeval tv;
+        tv.tv_sec = 0;
+        tv.tv_usec = 500000;
+        FD_ZERO(&fds);
+        FD_SET(client->getFileDescriptor(), &fds);
+        int selectRet = select(client->getFileDescriptor() + 1, &fds, NULL, NULL, &tv);
+        if (selectRet == -1) {  // select failed
+            if (!client->isConnected()) {
+                break;
             }
-            close(client->getFileDescriptor());
-            publishDisconnected(*client);
-            deleteClient(*client);
-            break;
-        } else {
-            publishClientMsg(*client, msg, numOfBytesReceived);
+        } else if (selectRet == 0) {  // timeout
+            if (!client->isConnected()) {
+                break;
+            }
+        } else if (FD_ISSET(client->getFileDescriptor(), &fds)) {
+            unsigned char msg[MAX_PACKET_SIZE];
+            ssize_t numOfBytesReceived = recv(client->getFileDescriptor(), msg, MAX_PACKET_SIZE, 0);
+            if (numOfBytesReceived < 1) {
+                client->setDisconnected();
+                if (numOfBytesReceived == 0) {  // client closed connection
+                    client->setErrorMessage("Client closed connection");
+                } else {
+                    client->setErrorMessage(strerror(errno));
+                }
+                close(client->getFileDescriptor());
+                publishDisconnected(*client);
+                deleteClient(*client);
+                break;
+            } else {
+                publishClientMsg(*client, msg, numOfBytesReceived);
+            }
         }
     }
 }
@@ -180,12 +199,11 @@ Client TcpServer::acceptClient(uint timeout) {
     return newClient;
 }
 
-SocketRet TcpServer::sendBcast(const unsigned char*msg, size_t size)
-{
+SocketRet TcpServer::sendBcast(const unsigned char *msg, size_t size) {
     SocketRet ret;
     ret.m_success = true;
-    for ( auto &client: m_clients) {
-        auto clientRet = client.sendMsg(msg,size);
+    for (auto &client : m_clients) {
+        auto clientRet = client.sendMsg(msg, size);
         ret.m_success &= clientRet.m_success;
         if (!clientRet.m_success) {
             ret.m_msg = clientRet.m_msg;
@@ -199,6 +217,7 @@ SocketRet TcpServer::finish() {
     SocketRet ret;
     for (uint i = 0; i < m_clients.size(); i++) {
         m_clients[i].setDisconnected();
+        m_clients[i].joinThreadHandler();
         if (close(m_clients[i].getFileDescriptor()) == -1) {  // close failed
             ret.m_success = false;
             ret.m_msg = strerror(errno);

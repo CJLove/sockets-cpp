@@ -127,6 +127,10 @@ public:
         m_thread = new std::thread(func);
     }
 
+    void joinThreadHandler() {
+        m_thread->join();
+    }
+
     /**
      * @brief Send a message to this TCP client
      * 

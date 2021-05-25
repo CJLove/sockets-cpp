@@ -1,6 +1,6 @@
 #include "UdpSocket.h"
-#include <cstring>
 #include <arpa/inet.h>
+#include <cstring>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -14,8 +14,7 @@ UdpSocket::UdpSocket(ISocket *callback) : m_fd(-1), m_callback(callback), m_thre
 }
 
 UdpSocket::~UdpSocket() {
-    m_stop = true;
-    m_thread.detach();
+    finish();
 }
 
 SocketRet UdpSocket::startMcast(const char *mcastAddr, uint16_t port) {
@@ -56,7 +55,7 @@ SocketRet UdpSocket::startMcast(const char *mcastAddr, uint16_t port) {
     struct ip_mreq mreq;
     mreq.imr_multiaddr.s_addr = inet_addr(mcastAddr);
     mreq.imr_interface.s_addr = htonl(INADDR_ANY);
-    if (setsockopt(m_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*) &mreq, sizeof(mreq)) < 0){
+    if (setsockopt(m_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&mreq, sizeof(mreq)) < 0) {
         ret.m_success = false;
         ret.m_msg = "setsockopt(IP_ADD_MEMBERSHIP) failed";
         return ret;
@@ -66,8 +65,7 @@ SocketRet UdpSocket::startMcast(const char *mcastAddr, uint16_t port) {
     return ret;
 }
 
-SocketRet UdpSocket::startUnicast(const char *remoteAddr, uint16_t localPort, uint16_t port)
-{
+SocketRet UdpSocket::startUnicast(const char *remoteAddr, uint16_t localPort, uint16_t port) {
     SocketRet ret;
     if ((m_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
         ret.m_success = false;
@@ -98,10 +96,10 @@ SocketRet UdpSocket::startUnicast(const char *remoteAddr, uint16_t localPort, ui
     memset(&m_sockaddr, 0, sizeof(sockaddr));
     m_sockaddr.sin_family = AF_INET;
     m_sockaddr.sin_addr.s_addr = inet_addr(remoteAddr);
-    m_sockaddr.sin_port = htons(port);   
+    m_sockaddr.sin_port = htons(port);
 
     ret.m_success = true;
-    return ret; 
+    return ret;
 }
 
 void UdpSocket::publishUdpMsg(const unsigned char *msg, size_t msgSize) {
@@ -113,35 +111,52 @@ void UdpSocket::publishUdpMsg(const unsigned char *msg, size_t msgSize) {
 void UdpSocket::ReceiveTask() {
     while (!m_stop) {
         if (m_fd != -1) {
-            unsigned char msg[MAX_PACKET_SIZE];
-            ssize_t numOfBytesReceived = recv(m_fd, msg, MAX_PACKET_SIZE, 0);
-            if (numOfBytesReceived < 0) {
-                SocketRet ret;
-                ret.m_success = false;
-                m_stop = true;
-                if (numOfBytesReceived == 0) {
-                    ret.m_msg = "Closed connection";
-                } else {
-                    ret.m_msg = strerror(errno);
+            fd_set fds;
+            struct timeval tv;
+            tv.tv_sec = 0;
+            tv.tv_usec = 500000;
+            FD_ZERO(&fds);
+            FD_SET(m_fd, &fds);
+            int selectRet = select(m_fd + 1, &fds, NULL, NULL, &tv);
+            if (selectRet == -1) {  // select failed
+                if (m_stop) {
+                    break;
                 }
-                break;
-            } else {
-                publishUdpMsg(msg, numOfBytesReceived);
+            } else if (selectRet == 0) {  // timeout
+                if (m_stop) {
+                    break;
+                }
+            } else if (FD_ISSET(m_fd, &fds)) {
+
+                unsigned char msg[MAX_PACKET_SIZE];
+                ssize_t numOfBytesReceived = recv(m_fd, msg, MAX_PACKET_SIZE, 0);
+                if (numOfBytesReceived < 0) {
+                    SocketRet ret;
+                    ret.m_success = false;
+                    m_stop = true;
+                    if (numOfBytesReceived == 0) {
+                        ret.m_msg = "Closed connection";
+                    } else {
+                        ret.m_msg = strerror(errno);
+                    }
+                    break;
+                } else {
+                    publishUdpMsg(msg, numOfBytesReceived);
+                }
             }
         }
     }
 }
 
-SocketRet UdpSocket::sendMsg(const unsigned char *msg, size_t size)
-{
+SocketRet UdpSocket::sendMsg(const unsigned char *msg, size_t size) {
     SocketRet ret;
-    ssize_t numBytesSent = sendto(m_fd, (void*)msg, size, 0,(struct sockaddr*)&m_sockaddr, sizeof(m_sockaddr));
-    if (numBytesSent < 0 ) { // send failed
+    ssize_t numBytesSent = sendto(m_fd, (void *)msg, size, 0, (struct sockaddr *)&m_sockaddr, sizeof(m_sockaddr));
+    if (numBytesSent < 0) {  // send failed
         ret.m_success = false;
         ret.m_msg = strerror(errno);
         return ret;
     }
-    if (static_cast<size_t>(numBytesSent) < size) { // not all bytes were sent
+    if (static_cast<size_t>(numBytesSent) < size) {  // not all bytes were sent
         ret.m_success = false;
         char msg[100];
         sprintf(msg, "Only %ld bytes out of %lu was sent to client", numBytesSent, size);
@@ -149,14 +164,16 @@ SocketRet UdpSocket::sendMsg(const unsigned char *msg, size_t size)
         return ret;
     }
     ret.m_success = true;
-    return ret;   
+    return ret;
 }
 
-SocketRet UdpSocket::finish(){
-    m_stop = true;
-    m_thread.join();
+SocketRet UdpSocket::finish() {
+    if (m_thread.joinable()) {
+        m_stop = true;
+        m_thread.join();
+    }
     SocketRet ret;
-    if (close(m_fd) == -1) { // close failed
+    if (close(m_fd) == -1) {  // close failed
         ret.m_success = false;
         ret.m_msg = strerror(errno);
         return ret;
