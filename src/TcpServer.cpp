@@ -4,25 +4,27 @@
 
 namespace sockets {
 
-Client::~Client() {
-    if (m_thread != nullptr) {
-        if (m_thread->joinable()) {
-            m_isConnected = false;
-            m_thread->join();
-        }
-        delete m_thread;
-        m_thread = nullptr;
+TcpServer::Client::Client(int fd, const char *ipAddr):
+    m_sockfd(fd), m_ip(ipAddr), m_isConnected(true)
+{
+
+}
+
+TcpServer::Client::~Client() {
+    if (m_thread.joinable()) {
+        m_isConnected = false;
+        m_thread.join();
     }
 }
 
-bool Client::operator==(const Client &other) {
+bool TcpServer::Client::operator==(const Client &other) {
     if ((this->m_sockfd == other.m_sockfd) && (this->m_ip == other.m_ip)) {
         return true;
     }
     return false;
 }
 
-SocketRet Client::sendMsg(const unsigned char *msg, size_t size) {
+SocketRet TcpServer::Client::sendMsg(const unsigned char *msg, size_t size) {
     SocketRet ret;
     if (m_sockfd) {
         ssize_t numBytesSent = send(m_sockfd, (char *)msg, size, 0);
@@ -92,7 +94,7 @@ void TcpServer::receiveTask() {
     }
 }
 
-bool TcpServer::deleteClient(Client &client) {
+bool TcpServer::deleteClient(ClientRef &client) {
     size_t clientIndex = 0;
     bool found = false;
     for (size_t i = 0; i < m_clients.size(); i++) {
@@ -109,13 +111,13 @@ bool TcpServer::deleteClient(Client &client) {
     return false;
 }
 
-void TcpServer::publishClientMsg(const Client &client, const unsigned char *msg, size_t msgSize) {
+void TcpServer::publishClientMsg(const ClientRef &client, const unsigned char *msg, size_t msgSize) {
     if (m_callback) {
         m_callback->onReceiveClientData(client, msg, msgSize);
     }
 }
 
-void TcpServer::publishDisconnected(const Client &client) {
+void TcpServer::publishDisconnected(const ClientRef &client) {
     if (m_callback) {
         SocketRet ret;
         ret.m_msg = client.getInfoMessage();
@@ -161,9 +163,8 @@ SocketRet TcpServer::start(uint16_t port) {
     return ret;
 }
 
-Client TcpServer::acceptClient(uint timeout) {
+ClientRef TcpServer::acceptClient(uint timeout) {
     socklen_t sosize = sizeof(m_clientAddress);
-    Client newClient;
 
     if (timeout > 0) {
         struct timeval tv;
@@ -173,37 +174,40 @@ Client TcpServer::acceptClient(uint timeout) {
         FD_SET(m_sockfd, &m_fds);
         int selectRet = select(m_sockfd + 1, &m_fds, NULL, NULL, &tv);
         if (selectRet == -1) {  // select failed
-            newClient.setErrorMessage(strerror(errno));
-            return newClient;
+            ClientRef newClientRef(*this,0);
+            newClientRef.setErrorMessage(strerror(errno));
+            return newClientRef;
         } else if (selectRet == 0) {  // timeout
-            newClient.setErrorMessage("Timeout waiting for client");
-            return newClient;
+            ClientRef newClientRef(*this,0);
+
+            newClientRef.setErrorMessage("Timeout waiting for client");
+            return newClientRef;
         } else if (!FD_ISSET(m_sockfd, &m_fds)) {  // no new client
-            newClient.setErrorMessage("File descriptor is not set");
-            return newClient;
+            ClientRef newClientRef(*this,0);
+            newClientRef.setErrorMessage("File descriptor is not set");
+            return newClientRef;
         }
     }
 
     int file_descriptor = accept(m_sockfd, (struct sockaddr *)&m_clientAddress, &sosize);
     if (file_descriptor == -1) {  // accept failed
-        newClient.setErrorMessage(strerror(errno));
-        return newClient;
+        ClientRef newClientRef(*this,0);
+        newClientRef.setErrorMessage(strerror(errno));
+        return newClientRef;
     }
 
-    newClient.setFileDescriptor(file_descriptor);
-    newClient.setConnected();
-    newClient.setIp(inet_ntoa(m_clientAddress.sin_addr));
-    m_clients.push_back(newClient);
-    m_clients.back().setThreadHandler(std::bind(&TcpServer::receiveTask, this));
+    uint32_t clientId = 0; // TBD: determine next clientId
+    m_clients.emplace(clientId,Client(file_descriptor,inet_ntoa(m_clientAddress.sin_addr)));
+    m_clients[clientId].setThreadHandler(std::bind(&TcpServer::receiveTask, this));
 
-    return newClient;
+    return ClientRef(*this,clientId);
 }
 
 SocketRet TcpServer::sendBcast(const unsigned char *msg, size_t size) {
     SocketRet ret;
     ret.m_success = true;
     for (auto &client : m_clients) {
-        auto clientRet = client.sendMsg(msg, size);
+        auto clientRet = client.second.sendMsg(msg, size);
         ret.m_success &= clientRet.m_success;
         if (!clientRet.m_success) {
             ret.m_msg = clientRet.m_msg;
@@ -215,15 +219,17 @@ SocketRet TcpServer::sendBcast(const unsigned char *msg, size_t size) {
 
 SocketRet TcpServer::finish() {
     SocketRet ret;
-    for (uint i = 0; i < m_clients.size(); i++) {
-        m_clients[i].setDisconnected();
-        m_clients[i].joinThreadHandler();
-        if (close(m_clients[i].getFileDescriptor()) == -1) {  // close failed
+    for (auto &client : m_clients) {
+        client.second.setDisconnected();
+        client.second.joinThreadHandler();
+        if (close(client.second.getFileDescriptor()) == -1) {
+            // close() failed
             ret.m_success = false;
             ret.m_msg = strerror(errno);
             return ret;
         }
     }
+
     if (close(m_sockfd) == -1) {  // close failed
         ret.m_success = false;
         ret.m_msg = strerror(errno);

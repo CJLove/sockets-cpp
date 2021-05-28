@@ -4,7 +4,7 @@
 
 namespace sockets {
 
-class Client;
+class ClientRef
 
 /**
  * @brief Status structure returned by socket class methods.
@@ -49,7 +49,7 @@ public:
      * @param data - pointer to received data
      * @param size - length of received data
      */
-    virtual void onReceiveClientData(const Client &client, const unsigned char *data, size_t size);
+    virtual void onReceiveClientData(const ClientRef &client, const unsigned char *data, size_t size);
 
     /**
      * @brief Receive notification that UDP or TCP server connection has disconnected
@@ -64,7 +64,7 @@ public:
      * @param client - TCP client whose connection dropped
      * @param ret - Error information
      */
-    virtual void onClientDisconnect(const Client &client, const SocketRet &ret);
+    virtual void onClientDisconnect(const ClientRef &client, const SocketRet &ret);
 };
 
 }  // Namespace sockets
