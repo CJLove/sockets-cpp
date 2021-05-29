@@ -72,7 +72,7 @@ SocketRet TcpServer::start(uint16_t port) {
     ret.m_success = true;
 
     // Add the accept socket to m_fds
-    std::cout << "accept socket " << m_sockfd << "\n";
+    //std::cout << "accept socket " << m_sockfd << "\n";
     FD_ZERO(&m_fds);
     FD_SET(m_sockfd, &m_fds);
 
@@ -91,24 +91,23 @@ int TcpServer::findMaxFd() {
 
 void TcpServer::serverTask() {
     struct timeval tv;
-    tv.tv_sec = 0;
-    tv.tv_usec = 500000;  // 500 ms
 
     while (!m_stop) { 
         tv.tv_sec = 0;
         tv.tv_usec = 500000;  // 500 ms
+        fd_set read_set = m_fds;
         int maxfds = findMaxFd();
-        int selectRet = select(maxfds,&m_fds, NULL, NULL, &tv);
+        int selectRet = select(maxfds,&read_set, NULL, NULL, &tv);
         if (selectRet < 0) {
             // select() failed or timed out, so retry after a shutdown check
-            std::cout << "select() returns " << strerror(errno) << "\n";
+            //std::cout << "select() returns " << strerror(errno) << "\n";
             continue;
         } else if (selectRet == 0) {
-            std::cout << "select() timeout\n";
+            //std::cout << "select() timeout\n";
         } else if (selectRet > 0) {
-            std::cout << "select() returns " << selectRet << "\n";
+            //std::cout << "select() returns " << selectRet << "\n";
             for (int fd = 0; fd < maxfds; fd++) {
-                if (FD_ISSET(fd, &m_fds)) {
+                if (FD_ISSET(fd, &read_set)) {
                     if (m_clients.count(fd)) {
                         // data on client socket
                         Client &client = m_clients[fd];
