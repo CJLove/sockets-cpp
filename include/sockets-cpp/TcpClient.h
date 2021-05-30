@@ -21,13 +21,13 @@ using sockets::ISocket;
 
 /**
  * @brief TcpClient encapsulates a TCP client socket connection to a server
- * 
+ *
  */
 class TcpClient {
 public:
     /**
      * @brief Construct a new Tcp Client object
-     * 
+     *
      * @param callback - pointer to the callback object which will handle notifications
      */
     TcpClient(ISocket *callback);
@@ -39,7 +39,7 @@ public:
 
     /**
      * @brief Establish the TCP client connection
-     * 
+     *
      * @param remoteIp - remote IP address to connect to
      * @param remotePort - remote port number to connect to
      * @return SocketRet - indication of whether the client connection was established
@@ -48,7 +48,7 @@ public:
 
     /**
      * @brief Send a message to the TCP server
-     * 
+     *
      * @param msg - pointer to the message data
      * @param size - length of the message data
      * @return SocketRet - indication of whether the message was sent successfully
@@ -57,7 +57,7 @@ public:
 
     /**
      * @brief Shut down the TCP client
-     * 
+     *
      * @return SocketRet - indication of whether the client was shut down successfully
      */
     SocketRet finish();
@@ -65,7 +65,7 @@ public:
 private:
     /**
      * @brief Publish message received from TCP server
-     * 
+     *
      * @param msg - pointer to the message data
      * @param msgSize - length of the message data
      */
@@ -73,7 +73,7 @@ private:
 
     /**
      * @brief Publish notification of disconnection
-     * 
+     *
      * @param ret - error information
      */
     void publishDisconnected(const SocketRet &ret);

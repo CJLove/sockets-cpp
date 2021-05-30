@@ -12,27 +12,27 @@ using sockets::ISocket;
 
 /**
  * @brief The UdpSocket class represents a UDP unicast or multicast socket connection
- * 
+ *
  */
 class UdpSocket {
 public:
     /**
      * @brief Construct a new UDP Socket object
-     * 
+     *
      * @param callback - the callback recipient
      */
     UdpSocket(ISocket *callback);
 
     /**
      * @brief Destroy the UDP Socket object
-     * 
+     *
      */
     ~UdpSocket();
 
     /**
      * @brief Start a UDP multicast socket by binding to the server address and joining the
      *          multicast group.
-     * 
+     *
      * @param mcastAddr - multicast group address to join
      * @param port - port number to listen/connect to
      * @return SocketRet - indication that multicast setup was successful
@@ -42,7 +42,7 @@ public:
     /**
      * @brief Start a UDP unicast socket by binding to the server address and storing the
      *          IP address and port number for the peer.
-     * 
+     *
      * @param remoteAddr - remote IP address
      * @param localPort - local port to listen on
      * @param port - remote port to connect to when sending messages
@@ -52,7 +52,7 @@ public:
 
     /**
      * @brief Send a message over UDP
-     * 
+     *
      * @param msg - pointer to the message data
      * @param size - length of the message data
      * @return SocketRet - indication that the message was sent successfully
@@ -61,7 +61,7 @@ public:
 
     /**
      * @brief Shutdown the UDP socket
-     * 
+     *
      * @return SocketRet - indication that the UDP socket was shut down successfully
      */
     SocketRet finish();
@@ -69,7 +69,7 @@ public:
 private:
     /**
      * @brief Publish a UDP message received from a peer
-     * 
+     *
      * @param msg - pointer to the message data
      * @param msgSize - length of the message data
      */

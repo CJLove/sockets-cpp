@@ -214,7 +214,6 @@ SocketRet TcpServer::finish() {
 
     // Close client sockets
     for (auto &client : m_clients) {
-        client.second.setDisconnected();
         if (close(client.second.m_sockfd) == -1) {
             // close() failed
             ret.m_success = false;

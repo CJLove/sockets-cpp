@@ -112,7 +112,6 @@ void TcpClient::ReceiveTask() {
                     ret.m_msg = strerror(errno);
                 }
                 publishDisconnected(ret);
-                finish();
                 break;
             } else {
                 publishServerMsg(msg, numOfBytesReceived);

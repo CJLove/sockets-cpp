@@ -19,7 +19,6 @@ public:
     void sendMsg(int idx, const unsigned char *data, size_t len);
 
 private:
-
     sockets::TcpServer m_server;
     int m_clientIdx;
     std::set<int> m_clients;
@@ -41,7 +40,7 @@ void ServerApp::sendMsg(int idx, const unsigned char *data, size_t len) {
             std::cout << "Broadcast send Error: " << ret.m_msg << "\n";
         }
     } else if (m_clients.count(idx) > 0) {
-        auto ret = m_server.sendClientMessage(idx,data,len);
+        auto ret = m_server.sendClientMessage(idx, data, len);
         if (!ret.m_success) {
             std::cout << "Send Error: " << ret.m_msg << "\n";
         }
@@ -50,14 +49,14 @@ void ServerApp::sendMsg(int idx, const unsigned char *data, size_t len) {
     }
 }
 
-
 void ServerApp::onReceiveClientData(const sockets::ClientHandle &client, const unsigned char *data, size_t size) {
-    std::string str(reinterpret_cast<const char *>(data),size);
-    std::cout << "Client " << client  << " Rcvd: " << str << "\n";
+    std::string str(reinterpret_cast<const char *>(data), size);
+    std::cout << "Client " << client << " Rcvd: " << str << "\n";
 }
 
 void ServerApp::onClientConnect(const sockets::ClientHandle &client) {
-    std::cout << "Client " << client << " connection from " << m_server.getIp(client) << ":" << m_server.getPort(client) << "\n";
+    std::cout << "Client " << client << " connection from " << m_server.getIp(client) << ":" << m_server.getPort(client)
+              << "\n";
     m_clients.insert(client);
 }
 
@@ -97,13 +96,10 @@ int main(int argc, char **argv) {
         if (data[0] != 'B' && data[0] != 'b') {
             try {
                 idx = std::stoi(data);
-            }
-            catch (...) {
-                continue;
-            }
+            } catch (...) { continue; }
         }
 
-        app->sendMsg(idx, reinterpret_cast<const unsigned char *>(data.substr(2,data.size()-2).c_str()), data.size() - 2);
+        app->sendMsg(idx, reinterpret_cast<const unsigned char *>(data.substr(2, data.size() - 2).c_str()), data.size() - 2);
     }
 
     delete app;

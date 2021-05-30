@@ -11,16 +11,14 @@
 #include <string>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <thread>
 #include <unistd.h>
 #include <unordered_map>
-#include <thread>
 
 namespace sockets {
 
 using sockets::IServerSocket;
 class TcpServer;
-
-
 
 /**
  * @brief The TcpServer class encapsulates a TCP server supporting one or more TCP client connections
@@ -36,7 +34,7 @@ public:
     TcpServer(IServerSocket *callback);
 
     /**
-     * @brief Destroy the TCP Server object
+     * @brief Shutdown and destroy the TCP Server object
      */
     ~TcpServer();
 
@@ -66,6 +64,14 @@ public:
      */
     SocketRet sendBcast(const unsigned char *msg, size_t size);
 
+    /**
+     * @brief Send a message to a specific connected client
+     *
+     * @param client - handle of the TCP client
+     * @param msg - pointer to the message data
+     * @param size - length of the message data
+     * @return SocketRet - indication that the message was sent to the client
+     */
     SocketRet sendClientMessage(ClientHandle &client, const unsigned char *msg, size_t size);
 
     /**
@@ -75,10 +81,29 @@ public:
      */
     SocketRet finish();
 
+    /**
+     * @brief Get the IP address for a specific client
+     *
+     * @param clientId - handle of the TCP client
+     * @return std::string - IP address
+     */
     std::string getIp(ClientHandle clientId) const;
 
+    /**
+     * @brief Get the port number for a specific client
+     *
+     * @param clientId - handle of the TCP client
+     * @return uint16_t - port number
+     */
     uint16_t getPort(ClientHandle clientId) const;
 
+    /**
+     * @brief Return whether a specific client is connected or not
+     *
+     * @param clientId - handle of the TCP client
+     * @return true - client is connected
+     * @return false - client is not connected
+     */
     bool isConnected(ClientHandle clientId) const;
 
 private:
@@ -86,7 +111,7 @@ private:
      * @brief Client represents a connection to a TCP client
      */
     struct Client {
-    
+
         /**
          * @brief The TCP client's IP address
          */
@@ -107,33 +132,19 @@ private:
          */
         bool m_isConnected = false;
 
+        /**
+         * @brief Construct a new Client object
+         *
+         * @param ipAddr - client's IP address
+         * @param fd - file descriptor for the client connection
+         * @param port - client's port number
+         */
         Client(const char *ipAddr, int fd, uint16_t port);
 
-        Client()
-        {}
-
         /**
-         * @brief Set the indicator to indicate that this TCP client is connected
+         * @brief Construct a new Client object
          */
-        void setConnected() {
-            m_isConnected = true;
-        }
-
-        /**
-         * @brief Set the indicator to indicate that this TCP client is not connected
-         */
-        void setDisconnected() {
-            m_isConnected = false;
-        }
-
-        /**
-         * @brief Get the indicator of whether the TCP client is connected or not
-         *
-         * @return true
-         * @return false
-         */
-        bool isConnected() {
-            return m_isConnected;
+        Client() {
         }
 
         /**
@@ -162,10 +173,23 @@ private:
      */
     void publishDisconnected(const ClientHandle &client);
 
+    /**
+     * @brief Publish notification of a new TCP client connection
+     *
+     * @param client - handle of the new TCP client
+     */
     void publishClientConnect(const ClientHandle &client);
 
+    /**
+     * @brief Find the maximum file descriptor among listen socket and all client sockets for
+     *          use by select()
+     * @return int
+     */
     int findMaxFd();
 
+    /**
+     * @brief Thread handling all accept requests and reception of data from connected clients
+     */
     void serverTask();
 
     /**
@@ -190,20 +214,22 @@ private:
 
     /**
      * @brief Flag to stop the server thread
-     * 
      */
     bool m_stop = false;
 
     /**
      * @brief The collection of connected TCP clients
      */
-    std::unordered_map<ClientHandle,Client> m_clients;
+    std::unordered_map<ClientHandle, Client> m_clients;
 
     /**
      * @brief The registered callback recipient
      */
     IServerSocket *m_callback;
 
+    /**
+     * @brief Server thread
+     */
     std::thread m_thread;
 };
 
