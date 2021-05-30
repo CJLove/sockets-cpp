@@ -1,28 +1,15 @@
 #include "TcpServer.h"
+#include <algorithm>
 
 #define MAX_PACKET_SIZE 65536
 
 namespace sockets {
 
-Client::~Client() {
-    if (m_thread != nullptr) {
-        if (m_thread->joinable()) {
-            m_isConnected = false;
-            m_thread->join();
-        }
-        delete m_thread;
-        m_thread = nullptr;
-    }
+TcpServer::Client::Client(const char *ipAddr, int fd, uint16_t port)
+    : m_ip(ipAddr), m_sockfd(fd), m_port(port), m_isConnected(true) {
 }
 
-bool Client::operator==(const Client &other) {
-    if ((this->m_sockfd == other.m_sockfd) && (this->m_ip == other.m_ip)) {
-        return true;
-    }
-    return false;
-}
-
-SocketRet Client::sendMsg(const unsigned char *msg, size_t size) {
+SocketRet TcpServer::Client::sendMsg(const unsigned char *msg, size_t size) {
     SocketRet ret;
     if (m_sockfd) {
         ssize_t numBytesSent = send(m_sockfd, (char *)msg, size, 0);
@@ -43,90 +30,15 @@ SocketRet Client::sendMsg(const unsigned char *msg, size_t size) {
     return ret;
 }
 
-TcpServer::TcpServer(ISocket *callback) : m_callback(callback) {
+TcpServer::TcpServer(IServerSocket *callback) : m_callback(callback) {
 }
 
 TcpServer::~TcpServer() {
     finish();
 }
 
-void TcpServer::receiveTask() {
-    // Note: new client has just been added to the end of m_clients at the time
-    // this new thread has been started
-    Client *client = &m_clients.back();
-
-    while (client->isConnected()) {
-        fd_set fds;
-        struct timeval tv;
-        tv.tv_sec = 0;
-        tv.tv_usec = 500000;
-        FD_ZERO(&fds);
-        FD_SET(client->getFileDescriptor(), &fds);
-        int selectRet = select(client->getFileDescriptor() + 1, &fds, NULL, NULL, &tv);
-        if (selectRet == -1) {  // select failed
-            if (!client->isConnected()) {
-                break;
-            }
-        } else if (selectRet == 0) {  // timeout
-            if (!client->isConnected()) {
-                break;
-            }
-        } else if (FD_ISSET(client->getFileDescriptor(), &fds)) {
-            unsigned char msg[MAX_PACKET_SIZE];
-            ssize_t numOfBytesReceived = recv(client->getFileDescriptor(), msg, MAX_PACKET_SIZE, 0);
-            if (numOfBytesReceived < 1) {
-                client->setDisconnected();
-                if (numOfBytesReceived == 0) {  // client closed connection
-                    client->setErrorMessage("Client closed connection");
-                } else {
-                    client->setErrorMessage(strerror(errno));
-                }
-                close(client->getFileDescriptor());
-                publishDisconnected(*client);
-                deleteClient(*client);
-                break;
-            } else {
-                publishClientMsg(*client, msg, numOfBytesReceived);
-            }
-        }
-    }
-}
-
-bool TcpServer::deleteClient(Client &client) {
-    size_t clientIndex = 0;
-    bool found = false;
-    for (size_t i = 0; i < m_clients.size(); i++) {
-        if (m_clients[i] == client) {
-            clientIndex = i;
-            found = true;
-            break;
-        }
-    }
-    if (found) {
-        m_clients.erase(m_clients.begin() + clientIndex);
-        return true;
-    }
-    return false;
-}
-
-void TcpServer::publishClientMsg(const Client &client, const unsigned char *msg, size_t msgSize) {
-    if (m_callback) {
-        m_callback->onReceiveClientData(client, msg, msgSize);
-    }
-}
-
-void TcpServer::publishDisconnected(const Client &client) {
-    if (m_callback) {
-        SocketRet ret;
-        ret.m_msg = client.getInfoMessage();
-
-        m_callback->onClientDisconnect(client, ret);
-    }
-}
-
 SocketRet TcpServer::start(uint16_t port) {
     m_sockfd = 0;
-    m_clients.reserve(10);
     SocketRet ret;
 
     m_sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -158,52 +70,120 @@ SocketRet TcpServer::start(uint16_t port) {
         return ret;
     }
     ret.m_success = true;
+
+    // Add the accept socket to m_fds
+    //std::cout << "accept socket " << m_sockfd << "\n";
+    FD_ZERO(&m_fds);
+    FD_SET(m_sockfd, &m_fds);
+
+    m_thread = std::thread(&TcpServer::serverTask,this);
+
     return ret;
 }
 
-Client TcpServer::acceptClient(uint timeout) {
-    socklen_t sosize = sizeof(m_clientAddress);
-    Client newClient;
+int TcpServer::findMaxFd() {
+    int maxfd = m_sockfd;
+    for (const auto &client : m_clients) {
+        maxfd = std::max(maxfd, client.second.m_sockfd);
+    }
+    return maxfd + 1;
+}
 
-    if (timeout > 0) {
-        struct timeval tv;
-        tv.tv_sec = 1;
-        tv.tv_usec = 0;
-        FD_ZERO(&m_fds);
-        FD_SET(m_sockfd, &m_fds);
-        int selectRet = select(m_sockfd + 1, &m_fds, NULL, NULL, &tv);
-        if (selectRet == -1) {  // select failed
-            newClient.setErrorMessage(strerror(errno));
-            return newClient;
-        } else if (selectRet == 0) {  // timeout
-            newClient.setErrorMessage("Timeout waiting for client");
-            return newClient;
-        } else if (!FD_ISSET(m_sockfd, &m_fds)) {  // no new client
-            newClient.setErrorMessage("File descriptor is not set");
-            return newClient;
+void TcpServer::serverTask() {
+    struct timeval tv;
+
+    while (!m_stop) { 
+        tv.tv_sec = 0;
+        tv.tv_usec = 500000;  // 500 ms
+        fd_set read_set = m_fds;
+        int maxfds = findMaxFd();
+        int selectRet = select(maxfds,&read_set, NULL, NULL, &tv);
+        if (selectRet < 0) {
+            // select() failed or timed out, so retry after a shutdown check
+            //std::cout << "select() returns " << strerror(errno) << "\n";
+            continue;
+        } else if (selectRet == 0) {
+            //std::cout << "select() timeout\n";
+        } else if (selectRet > 0) {
+            //std::cout << "select() returns " << selectRet << "\n";
+            for (int fd = 0; fd < maxfds; fd++) {
+                if (FD_ISSET(fd, &read_set)) {
+                    if (m_clients.count(fd)) {
+                        // data on client socket
+                        Client &client = m_clients[fd];
+                        unsigned char msg[MAX_PACKET_SIZE];
+                        ssize_t numOfBytesReceived = recv(fd, msg, MAX_PACKET_SIZE, 0);
+                        if (numOfBytesReceived < 1) {
+                            client.m_isConnected = false;
+                            if (numOfBytesReceived == 0) {  // client closed connection
+                                deleteClient(fd);
+                                publishDisconnected(fd);
+                            }
+                        } else {
+                            publishClientMsg(fd, msg, numOfBytesReceived);
+                        }
+                    } else {
+                        // data on accept socket
+                        socklen_t sosize = sizeof(m_clientAddress);
+                        int clientfd = accept(fd, (struct sockaddr *)&m_clientAddress, &sosize);
+                        if (clientfd == -1) {
+                            // accept() failed
+                            std::cout << "accept returned " << strerror(errno) << "\n";
+                        } else {
+                            m_clients.emplace(clientfd, 
+                                Client(inet_ntoa(m_clientAddress.sin_addr),clientfd, 
+                                    static_cast<uint16_t>(ntohs(m_clientAddress.sin_port))));
+                            FD_SET(clientfd,&m_fds);
+                            publishClientConnect(clientfd);
+                        }
+                    }
+                }
+
+            }
         }
     }
+}
 
-    int file_descriptor = accept(m_sockfd, (struct sockaddr *)&m_clientAddress, &sosize);
-    if (file_descriptor == -1) {  // accept failed
-        newClient.setErrorMessage(strerror(errno));
-        return newClient;
+bool TcpServer::deleteClient(ClientHandle &handle) {
+    if (m_clients.count(handle) > 0) {
+        Client &client = m_clients[handle];
+
+        // Close socket connection and remove from m_fds
+        close(client.m_sockfd);
+        FD_CLR(client.m_sockfd,&m_fds);
+
+        m_clients.erase(handle);
+        return true;
     }
+    return false;
+}
 
-    newClient.setFileDescriptor(file_descriptor);
-    newClient.setConnected();
-    newClient.setIp(inet_ntoa(m_clientAddress.sin_addr));
-    m_clients.push_back(newClient);
-    m_clients.back().setThreadHandler(std::bind(&TcpServer::receiveTask, this));
+void TcpServer::publishClientMsg(const ClientHandle &client, const unsigned char *msg, size_t msgSize) {
+    if (m_callback) {
+        m_callback->onReceiveClientData(client, msg, msgSize);
+    }
+}
 
-    return newClient;
+void TcpServer::publishDisconnected(const ClientHandle &client) {
+    if (m_callback) {
+        SocketRet ret;
+        ret.m_msg = "Client disconnected.";
+
+        m_callback->onClientDisconnect(client, ret);
+    }
+}
+
+void TcpServer::publishClientConnect(const ClientHandle &client) {
+    if (m_callback) {
+        m_callback->onClientConnect(client);
+    }
 }
 
 SocketRet TcpServer::sendBcast(const unsigned char *msg, size_t size) {
     SocketRet ret;
     ret.m_success = true;
     for (auto &client : m_clients) {
-        auto clientRet = client.sendMsg(msg, size);
+        auto clientRet = client.second.sendMsg(msg, size);
         ret.m_success &= clientRet.m_success;
         if (!clientRet.m_success) {
             ret.m_msg = clientRet.m_msg;
@@ -213,17 +193,36 @@ SocketRet TcpServer::sendBcast(const unsigned char *msg, size_t size) {
     return ret;
 }
 
+SocketRet TcpServer::sendClientMessage(ClientHandle &clientId, const unsigned char *msg, size_t size)
+{
+    SocketRet ret;
+    if (m_clients.count(clientId)) {
+        Client &client = m_clients[clientId];
+        client.sendMsg(msg,size);
+        ret.m_success = true;
+        return ret;
+    }
+    ret.m_msg = "Client not found";
+    ret.m_success = false;
+    return ret;
+}
+
 SocketRet TcpServer::finish() {
     SocketRet ret;
-    for (uint i = 0; i < m_clients.size(); i++) {
-        m_clients[i].setDisconnected();
-        m_clients[i].joinThreadHandler();
-        if (close(m_clients[i].getFileDescriptor()) == -1) {  // close failed
+    m_stop = true;
+    m_thread.join();
+
+    // Close client sockets
+    for (auto &client : m_clients) {
+        if (close(client.second.m_sockfd) == -1) {
+            // close() failed
             ret.m_success = false;
             ret.m_msg = strerror(errno);
             return ret;
         }
     }
+
+    // Close accept socket
     if (close(m_sockfd) == -1) {  // close failed
         ret.m_success = false;
         ret.m_msg = strerror(errno);
@@ -232,6 +231,30 @@ SocketRet TcpServer::finish() {
     m_clients.clear();
     ret.m_success = true;
     return ret;
+}
+
+std::string TcpServer::getIp(ClientHandle client) const
+{
+    if (m_clients.count(client)) {
+        return m_clients.find(client)->second.m_ip;
+    }
+    return "Client not found";
+}
+
+uint16_t TcpServer::getPort(ClientHandle client) const
+{
+    if (m_clients.count(client)) {
+        return m_clients.find(client)->second.m_port;
+    }
+    return 0;
+}
+
+bool TcpServer::isConnected(ClientHandle client) const
+{
+    if (m_clients.count(client)) {
+        return m_clients.find(client)->second.m_isConnected;
+    }
+    return false;
 }
 
 }  // Namespace sockets

@@ -14,6 +14,8 @@ public:
 
     void sendMsg(const unsigned char *data, size_t len);
 
+    void onDisconnect(const sockets::SocketRet &ret);
+
 private:
     sockets::UdpSocket m_unicast;
 };
@@ -35,9 +37,14 @@ void UnicastApp::sendMsg(const unsigned char *data, size_t len) {
 }
 
 void UnicastApp::onReceiveData(const unsigned char *data, size_t size) {
-    std::string str(reinterpret_cast<const char *>(data),size);
+    std::string str(reinterpret_cast<const char *>(data), size);
 
     std::cout << "Received: " << str << "\n";
+}
+
+void UnicastApp::onDisconnect(const sockets::SocketRet &ret)
+{
+    std::cout << "Peer disconnected\n";
 }
 
 void usage() {
