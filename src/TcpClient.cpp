@@ -29,6 +29,8 @@ SocketRet TcpClient::connectTo(const char *remoteIp, uint16_t remotePort) {
         struct hostent *host;
         struct in_addr **addrList;
         if ((host = gethostbyname(remoteIp)) == NULL) {
+            close(m_sockfd);
+            m_sockfd = 0;
             ret.m_success = false;
             ret.m_msg = "Failed to resolve hostname";
             return ret;
@@ -41,6 +43,8 @@ SocketRet TcpClient::connectTo(const char *remoteIp, uint16_t remotePort) {
 
     int connectRet = connect(m_sockfd, (struct sockaddr *)&m_server, sizeof(m_server));
     if (connectRet == -1) {
+        close(m_sockfd);
+        m_sockfd = 0;
         ret.m_success = false;
         ret.m_msg = strerror(errno);
         return ret;
