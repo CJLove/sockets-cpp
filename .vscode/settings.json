@@ -1,8 +1,9 @@
 {
     "keyboard.dispatch": "keyCode",
     "cmake.configureOnOpen": true,
-    "clang-tidy.buildPath": "${workspaceFolder}/build/compile_commands.json",
-    "clang-tidy.compilerArgs": ["-extra-arg=-stdlib=libstdc++"],
+    "clangtidy.buildPath": "${workspaceFolder}/build",
+    "clangtidy.sourcePath": "${workspaceFolder}/src",
+    "clangtidy.checksPath": "${workspaceFolder}/.vscode",
     "C_Cpp.configurationWarnings": "Disabled",
     "files.associations": {
         "vector": "cpp",

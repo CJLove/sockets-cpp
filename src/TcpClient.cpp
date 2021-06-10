@@ -1,10 +1,10 @@
 #include "TcpClient.h"
 
-#define MAX_PACKET_SIZE 4096
+constexpr size_t MAX_PACKET_SIZE = 4096;
 
 namespace sockets {
 
-TcpClient::TcpClient(ISocket *callback) : m_callback(callback) {
+TcpClient::TcpClient(ISocket *callback) : m_server({}), m_callback(callback) {
 }
 
 TcpClient::~TcpClient() {
@@ -26,9 +26,9 @@ SocketRet TcpClient::connectTo(const char *remoteIp, uint16_t remotePort) {
 
     if (!inetSuccess) {  // inet_addr failed to parse address
         // if hostname is not in IP strings and dots format, try resolve it
-        struct hostent *host;
-        struct in_addr **addrList;
-        if ((host = gethostbyname(remoteIp)) == NULL) {
+        struct hostent *host = nullptr;
+        struct in_addr **addrList = nullptr;
+        if ((host = gethostbyname(remoteIp)) == nullptr) {
             close(m_sockfd);
             m_sockfd = 0;
             ret.m_success = false;
@@ -74,27 +74,25 @@ SocketRet TcpClient::sendMsg(const unsigned char *msg, size_t size) {
 }
 
 void TcpClient::publishServerMsg(const unsigned char *msg, size_t msgSize) {
-    if (m_callback) {
+    if (m_callback != nullptr) {
         m_callback->onReceiveData(msg, msgSize);
     }
 }
 
 void TcpClient::publishDisconnected(const SocketRet &ret) {
-    if (m_callback) {
+    if (m_callback != nullptr) {
         m_callback->onDisconnect(ret);
     }
 }
 
 void TcpClient::ReceiveTask() {
-
+    constexpr int64_t USEC_DELAY = 500000;
     while (!m_stop) {
         fd_set fds;
-        struct timeval tv;
-        tv.tv_sec = 0;
-        tv.tv_usec = 500000;
+        struct timeval tv { 0, USEC_DELAY };
         FD_ZERO(&fds);
         FD_SET(m_sockfd, &fds);
-        int selectRet = select(m_sockfd + 1, &fds, NULL, NULL, &tv);
+        int selectRet = select(m_sockfd + 1, &fds, nullptr, nullptr, &tv);
         if (selectRet == -1) {  // select failed
             if (m_stop) {
                 break;
@@ -118,7 +116,7 @@ void TcpClient::ReceiveTask() {
                 publishDisconnected(ret);
                 break;
             } else {
-                publishServerMsg(msg, numOfBytesReceived);
+                publishServerMsg(msg, static_cast<size_t>(numOfBytesReceived));
             }
         }
     }

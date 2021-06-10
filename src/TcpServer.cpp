@@ -1,7 +1,7 @@
 #include "TcpServer.h"
 #include <algorithm>
 
-#define MAX_PACKET_SIZE 65536
+constexpr size_t MAX_PACKET_SIZE = 65536;
 
 namespace sockets {
 
@@ -12,7 +12,7 @@ TcpServer::Client::Client(const char *ipAddr, int fd, uint16_t port)
 SocketRet TcpServer::Client::sendMsg(const unsigned char *msg, size_t size) {
     SocketRet ret;
     if (m_sockfd) {
-        ssize_t numBytesSent = send(m_sockfd, (char *)msg, size, 0);
+        ssize_t numBytesSent = send(m_sockfd, (void *)msg, size, 0);
         if (numBytesSent < 0) {  // send failed
             ret.m_success = false;
             ret.m_msg = strerror(errno);
@@ -30,7 +30,7 @@ SocketRet TcpServer::Client::sendMsg(const unsigned char *msg, size_t size) {
     return ret;
 }
 
-TcpServer::TcpServer(IServerSocket *callback) : m_callback(callback) {
+TcpServer::TcpServer(IServerSocket *callback) : m_serverAddress({}), m_clientAddress({}), m_fds({}), m_callback(callback) {
 }
 
 TcpServer::~TcpServer() {
@@ -90,22 +90,18 @@ int TcpServer::findMaxFd() {
 }
 
 void TcpServer::serverTask() {
-    struct timeval tv;
+    constexpr int64_t USEC_DELAY = 500000;
+    
 
     while (!m_stop) { 
-        tv.tv_sec = 0;
-        tv.tv_usec = 500000;  // 500 ms
+        struct timeval tv {0, USEC_DELAY };
         fd_set read_set = m_fds;
         int maxfds = findMaxFd();
-        int selectRet = select(maxfds,&read_set, NULL, NULL, &tv);
+        int selectRet = select(maxfds,&read_set, nullptr, nullptr, &tv);
         if (selectRet < 0) {
             // select() failed or timed out, so retry after a shutdown check
-            //std::cout << "select() returns " << strerror(errno) << "\n";
             continue;
-        } else if (selectRet == 0) {
-            //std::cout << "select() timeout\n";
         } else if (selectRet > 0) {
-            //std::cout << "select() returns " << selectRet << "\n";
             for (int fd = 0; fd < maxfds; fd++) {
                 if (FD_ISSET(fd, &read_set)) {
                     if (m_clients.count(fd)) {
@@ -120,7 +116,7 @@ void TcpServer::serverTask() {
                                 publishDisconnected(fd);
                             }
                         } else {
-                            publishClientMsg(fd, msg, numOfBytesReceived);
+                            publishClientMsg(fd, msg, static_cast<size_t>(numOfBytesReceived));
                         }
                     } else {
                         // data on accept socket

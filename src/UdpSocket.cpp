@@ -6,7 +6,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define MAX_PACKET_SIZE 65535
+constexpr size_t MAX_PACKET_SIZE = 65535;
 
 namespace sockets {
 
@@ -32,8 +32,7 @@ SocketRet UdpSocket::startMcast(const char *mcastAddr, uint16_t port) {
         return ret;
     }
 
-    sockaddr_in localAddr;
-    memset(&localAddr, 0, sizeof(localAddr));
+    sockaddr_in localAddr = {};
     localAddr.sin_family = AF_INET;
     localAddr.sin_addr.s_addr = htonl(INADDR_ANY);
     localAddr.sin_port = htons(port);
@@ -52,7 +51,7 @@ SocketRet UdpSocket::startMcast(const char *mcastAddr, uint16_t port) {
 
     // use setsockopt() to request that the kernel join a multicast group
     //
-    struct ip_mreq mreq;
+    struct ip_mreq mreq {};
     mreq.imr_multiaddr.s_addr = inet_addr(mcastAddr);
     mreq.imr_interface.s_addr = htonl(INADDR_ANY);
     if (setsockopt(m_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&mreq, sizeof(mreq)) < 0) {
@@ -80,8 +79,7 @@ SocketRet UdpSocket::startUnicast(const char *remoteAddr, uint16_t localPort, ui
         return ret;
     }
 
-    sockaddr_in localAddr;
-    memset(&localAddr, 0, sizeof(localAddr));
+    sockaddr_in localAddr {};
     localAddr.sin_family = AF_INET;
     localAddr.sin_addr.s_addr = htonl(INADDR_ANY);
     localAddr.sin_port = htons(localPort);
@@ -103,21 +101,20 @@ SocketRet UdpSocket::startUnicast(const char *remoteAddr, uint16_t localPort, ui
 }
 
 void UdpSocket::publishUdpMsg(const unsigned char *msg, size_t msgSize) {
-    if (m_callback) {
+    if (m_callback != nullptr) {
         m_callback->onReceiveData(msg, msgSize);
     }
 }
 
 void UdpSocket::ReceiveTask() {
+    constexpr int64_t USEC_DELAY = 500000;
     while (!m_stop) {
         if (m_fd != -1) {
             fd_set fds;
-            struct timeval tv;
-            tv.tv_sec = 0;
-            tv.tv_usec = 500000;
+            struct timeval tv { 0, USEC_DELAY };
             FD_ZERO(&fds);
             FD_SET(m_fd, &fds);
-            int selectRet = select(m_fd + 1, &fds, NULL, NULL, &tv);
+            int selectRet = select(m_fd + 1, &fds, nullptr, nullptr, &tv);
             if (selectRet == -1) {  // select failed
                 if (m_stop) {
                     break;
@@ -140,9 +137,8 @@ void UdpSocket::ReceiveTask() {
                         ret.m_msg = strerror(errno);
                     }
                     break;
-                } else {
-                    publishUdpMsg(msg, numOfBytesReceived);
-                }
+                }     
+                publishUdpMsg(msg, static_cast<size_t>(numOfBytesReceived));
             }
         }
     }

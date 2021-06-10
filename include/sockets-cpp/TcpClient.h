@@ -2,13 +2,13 @@
 
 #include "ISocket.h"
 #include <arpa/inet.h>
-#include <errno.h>
+#include <cerrno>
 #include <iostream>
 #include <netdb.h>
 #include <netinet/in.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <thread>
@@ -30,7 +30,7 @@ public:
      *
      * @param callback - pointer to the callback object which will handle notifications
      */
-    TcpClient(ISocket *callback);
+    explicit TcpClient(ISocket *callback);
 
     /**
      * @brief Destroy the Tcp Client object
