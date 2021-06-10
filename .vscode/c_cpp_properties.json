@@ -6,7 +6,7 @@
                 "${workspaceFolder}/include",
                 "${workspaceFolder}/include/sockets-cpp",
                 "${workspaceFolder}/src",
-                "${workspaceFolder}/example"
+                "${workspaceFolder}/examples"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/g++",
