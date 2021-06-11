@@ -8,7 +8,7 @@
                 "${workspaceFolder}/src",
                 "${workspaceFolder}/examples"
             ],
-            "defines": [],
+            "defines": [ "FMT_SUPPORT" ],
             "compilerPath": "/usr/bin/g++",
             "cStandard": "c11",
             "cppStandard": "c++14",

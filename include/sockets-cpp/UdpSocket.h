@@ -23,11 +23,17 @@ public:
      */
     UdpSocket(ISocket *callback);
 
+    UdpSocket(const UdpSocket &) = delete;
+    UdpSocket(UdpSocket &&) = delete;
+
     /**
      * @brief Destroy the UDP Socket object
      *
      */
     ~UdpSocket();
+
+    UdpSocket &operator=(const UdpSocket &) = delete;
+    UdpSocket &operator=(UdpSocket &&) = delete;
 
     /**
      * @brief Start a UDP multicast socket by binding to the server address and joining the

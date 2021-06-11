@@ -2,12 +2,12 @@
 #include "ISocket.h"
 #include <arpa/inet.h>
 #include <cstring>
-#include <errno.h>
+#include <cerrno>
 #include <functional>
 #include <iostream>
 #include <netinet/in.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <string>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -33,10 +33,16 @@ public:
      */
     TcpServer(IServerSocket *callback);
 
+    TcpServer(const TcpServer &) = delete;
+    TcpServer(TcpServer &&) = delete;
+
     /**
      * @brief Shutdown and destroy the TCP Server object
      */
     ~TcpServer();
+
+    TcpServer &operator=(const TcpServer &) = delete;
+    TcpServer &operator=(TcpServer &&) = delete;
 
     /**
      * @brief Start the TCP server listening on the specified port number
@@ -49,11 +55,11 @@ public:
     /**
      * @brief Remove a TCP client connection
      *
-     * @param client - handle of the TCP client to be dropped
+     * @param handle - handle of the TCP client to be dropped
      * @return true
      * @return false
      */
-    bool deleteClient(ClientHandle &client);
+    bool deleteClient(ClientHandle &handle);
 
     /**
      * @brief Send a broadcast message to all connected TCP clients
@@ -144,8 +150,7 @@ private:
         /**
          * @brief Construct a new Client object
          */
-        Client() {
-        }
+        Client() = default;
 
         /**
          * @brief Send a message to this TCP client
@@ -154,7 +159,7 @@ private:
          * @param size - length of the message data
          * @return SocketRet - indication of whether the message was sent successfully
          */
-        SocketRet sendMsg(const unsigned char *msg, size_t size);
+        SocketRet sendMsg(const unsigned char *msg, size_t size) const;
     };
 
     /**

@@ -35,11 +35,6 @@ using ClientHandle = int32_t;
 class ISocket {
 public:
     /**
-     * @brief Destroy the ISocket-derived object
-     */
-    virtual ~ISocket() = default;
-
-    /**
      * @brief Receive data from a TCP client or UDP socket connection
      *
      * @param data - pointer to received data
@@ -57,11 +52,6 @@ public:
 
 class IServerSocket {
 public:
-    /**
-     * @brief Destroy the IServerSocket-derived object
-     */
-    virtual ~IServerSocket() = default;
-
     /**
      * @brief Receive notification of a new client connection
      *

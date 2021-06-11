@@ -32,10 +32,16 @@ public:
      */
     explicit TcpClient(ISocket *callback);
 
+    TcpClient(const TcpClient &) = delete;
+    TcpClient(TcpClient &&) = delete;
+
     /**
      * @brief Destroy the Tcp Client object
      */
     ~TcpClient();
+
+    TcpClient& operator=(const TcpClient&) = delete;
+    TcpClient& operator=(TcpClient&&) = delete;
 
     /**
      * @brief Establish the TCP client connection
@@ -53,7 +59,7 @@ public:
      * @param size - length of the message data
      * @return SocketRet - indication of whether the message was sent successfully
      */
-    SocketRet sendMsg(const unsigned char *msg, size_t size);
+    SocketRet sendMsg(const unsigned char *msg, size_t size) const;
 
     /**
      * @brief Shut down the TCP client

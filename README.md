@@ -5,6 +5,9 @@
 * `TcpServer`
 * `UdpSocket` - UDP Multicast/Unicast
 
+## Dependencies
+* Optional dependency on `fmt` for error string formatting
+
 ## Sample socket apps using these classes:
 ### TCP Client
 ```bash

@@ -75,6 +75,7 @@ endif(NOT CMAKE_BUILD_TYPE)
 # Project options
 #---------------------------------------------------------------------------------------
 
+option(FMT_SUPPORT "Use Fmt for string formatting" ON)
 option(BUILD_EXAMPLES "Build examples" OFF)
 option(BUILD_TESTS "Build unit tests." OFF)
 option(BUILD_COVERAGE "Build for code coverage." OFF)
@@ -107,6 +108,12 @@ endif()
 #---------------------------------------------------------------------------------------
 # Dependencies
 #---------------------------------------------------------------------------------------
+if (FMT_SUPPORT)
+  # Fmt
+  find_package(fmt REQUIRED)
+
+  add_definitions(-DFMT_SUPPORT)
+endif(FMT_SUPPORT)
 
 # Threads
 find_package(Threads)

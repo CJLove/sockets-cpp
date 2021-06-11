@@ -27,6 +27,9 @@ if(BUILD_STATIC_LIBS)
 endif(BUILD_STATIC_LIBS)
 
 target_link_libraries( sockets-cpp pthread rt )
+if (FMT_SUPPORT)
+    target_link_libraries( sockets-cpp fmt )
+endif(FMT_SUPPORT)
 
 if (BUILD_COVERAGE)
     target_link_libraries( sockets-cpp gcov )
