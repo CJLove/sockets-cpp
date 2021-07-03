@@ -61,10 +61,10 @@ echo "PARAM_CC=$PARAM_CC"
 echo "PARAM_CXX=$PARAM_CXX"
 echo "PARAM_CMAKE=$PARAM_CMAKE"
 
-[ ! -d ./msglib-cpp-git ] && { echo "ERROR: repo not cloned!"; exit 1; }
+[ ! -d ./sockets-cpp-git ] && { echo "ERROR: repo not cloned!"; exit 1; }
 
 # Change to the base directory of the repo
-cd msglib-cpp-git
+cd sockets-cpp-git
 
 # Create build directory and switch to it
 mkdir -p $BUILDDIR
@@ -86,10 +86,10 @@ ret=$?
 [ $ret -ne 0 ] && exit $ret
 
 # TODO: Run tests
-# [ ! -x ./test/msglibTests ] && { echo "ERROR: unit tests not built!"; exit 1; }
+# [ ! -x ./test/socketsTests ] && { echo "ERROR: unit tests not built!"; exit 1; }
 
 # Run unit tests
-#./test/msglibTests
+#./test/socketsTests
 #ret=$?
 
 # Return result
