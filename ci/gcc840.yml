@@ -2,7 +2,7 @@
 platform: linux
 image_resource:
   type: registry-image
-  source: { repository: fir.love.io:3005/amd64/gcc840 }
+  source: { repository: fir.love.io:3005/amd64/sockets-cpp-gcc840 }
 
 inputs:
 - name: sockets-cpp-git
