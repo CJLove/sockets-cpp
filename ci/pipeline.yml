@@ -1,0 +1,45 @@
+---
+resources:
+- name: sockets-cpp-git
+  type: git
+  icon: github
+  source:
+    uri: http://fir.love.io:3000/ChrisLove/sockets-cpp
+
+jobs:
+- name: set-pipeline
+  public: true
+  plan:
+  - get: sockets-cpp-git
+    trigger: true
+  - set_pipeline: sockets-cpp
+    file: sockets-cpp-git/ci/pipeline.yml
+- name: build-matrix
+  public: true
+  plan:  
+  - get: sockets-cpp-git
+    passed: [ set-pipeline ]
+    trigger: true
+  - in_parallel:
+    - task: gcc11_1_1
+      file: sockets-cpp-git/ci/gcc1111.yml
+    - task: gcc10_3_0
+      file: sockets-cpp-git/ci/gcc1030.yml
+    - task: gcc9_4_0
+      file: sockets-cpp-git/ci/gcc940.yml
+    - task: gcc8_4_0
+      file: sockets-cpp-git/ci/gcc840.yml
+
+# - name: sanitizers
+#   public: true
+#   plan:
+#   - get: sockets-cpp-git
+#     passed: [ build-matrix ]
+#     trigger: true
+#   - in_parallel:
+#     - task: asan
+#       file: sockets-cpp-git/ci/asan.yml
+#     - task: tsan
+#       file: sockets-cpp-git/ci/tsan.yml
+
+        
