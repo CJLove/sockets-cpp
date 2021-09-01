@@ -57,6 +57,14 @@ public:
     SocketRet startUnicast(const char *remoteAddr, uint16_t localPort, uint16_t port);
 
     /**
+     * @brief Start a UDP unicast socket by binding to the server address
+     * 
+     * @param localPort - local port to listen on
+     * @return SocketRet - Indication that unicast setup was successful
+     */
+    SocketRet startUnicast(uint16_t localPort);
+    
+    /**
      * @brief Send a message over UDP
      *
      * @param msg - pointer to the message data
