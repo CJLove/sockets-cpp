@@ -26,6 +26,29 @@ SocketRet TcpClient::connectTo(const char *remoteIp, uint16_t remotePort) {
         return ret;
     }
 
+    // set TX and RX buffer sizes
+    int option_value = RX_BUFFER_SIZE;
+    if (setsockopt(m_sockfd, SOL_SOCKET, SO_RCVBUF, (char*)&option_value, sizeof(option_value)) < 0) {
+        ret.m_success = false;
+#if defined(FMT_SUPPORT)
+        ret.m_msg = fmt::format("Error: setsockopt(SO_RCVBUF) failed: {}", strerror(errno));
+#else
+        ret.m_msg = "setsockopt(SO_REUSEADDR) failed";
+#endif
+        return ret;
+    }
+
+    option_value = TX_BUFFER_SIZE;
+    if (setsockopt(m_sockfd, SOL_SOCKET, SO_SNDBUF, (char*)&option_value, sizeof(option_value)) < 0) {
+        ret.m_success = false;
+#if defined(FMT_SUPPORT)
+        ret.m_msg = fmt::format("Error: setsockopt(SO_SNDBUF) failed: {}", strerror(errno));
+#else
+        ret.m_msg = "setsockopt(SO_REUSEADDR) failed";
+#endif
+        return ret;
+    }      
+
     int inetSuccess = inet_aton(remoteIp, &m_server.sin_addr);
 
     if (inetSuccess == 0) {  // inet_addr failed to parse address

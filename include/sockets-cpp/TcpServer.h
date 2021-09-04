@@ -236,6 +236,9 @@ private:
      * @brief Server thread
      */
     std::thread m_thread;
+
+    const int TX_BUFFER_SIZE = 10240;
+    const int RX_BUFFER_SIZE = 10240;    
 };
 
 }  // Namespace sockets

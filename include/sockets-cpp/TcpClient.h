@@ -113,6 +113,9 @@ private:
      * @brief Pointer to the registered callback receipient
      */
     ISocket *m_callback = nullptr;
+
+    const int TX_BUFFER_SIZE = 10240;
+    const int RX_BUFFER_SIZE = 10240; 
 };
 
 }  // Namespace sockets

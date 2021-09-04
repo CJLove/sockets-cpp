@@ -43,6 +43,28 @@ SocketRet UdpSocket::startMcast(const char *mcastAddr, uint16_t port) {
 #endif
         return ret;
     }
+    // Set TX and RX buffer sizes
+    int option_value = RX_BUFFER_SIZE;
+    if (setsockopt(m_fd, SOL_SOCKET, SO_RCVBUF, (char*)&option_value, sizeof(option_value)) < 0) {
+        ret.m_success = false;
+#if defined(FMT_SUPPORT)
+        ret.m_msg = fmt::format("Error: setsockopt(SO_RCVBUF) failed: {}", strerror(errno));
+#else
+        ret.m_msg = "setsockopt(SO_REUSEADDR) failed";
+#endif
+        return ret;
+    }
+
+    option_value = TX_BUFFER_SIZE;
+    if (setsockopt(m_fd, SOL_SOCKET, SO_SNDBUF, (char*)&option_value, sizeof(option_value)) < 0) {
+        ret.m_success = false;
+#if defined(FMT_SUPPORT)
+        ret.m_msg = fmt::format("Error: setsockopt(SO_SNDBUF) failed: {}", strerror(errno));
+#else
+        ret.m_msg = "setsockopt(SO_REUSEADDR) failed";
+#endif
+        return ret;
+    }       
 
     sockaddr_in localAddr = {};
     localAddr.sin_family = AF_INET;
@@ -106,6 +128,29 @@ SocketRet UdpSocket::startUnicast(uint16_t localPort) {
 #endif
         return ret;
     }
+
+    // Set TX and RX buffer sizes
+    int option_value = RX_BUFFER_SIZE;
+    if (setsockopt(m_fd, SOL_SOCKET, SO_RCVBUF, (char*)&option_value, sizeof(option_value)) < 0) {
+        ret.m_success = false;
+#if defined(FMT_SUPPORT)
+        ret.m_msg = fmt::format("Error: setsockopt(SO_RCVBUF) failed: {}", strerror(errno));
+#else
+        ret.m_msg = "setsockopt(SO_REUSEADDR) failed";
+#endif
+        return ret;
+    }
+
+    option_value = TX_BUFFER_SIZE;
+    if (setsockopt(m_fd, SOL_SOCKET, SO_SNDBUF, (char*)&option_value, sizeof(option_value)) < 0) {
+        ret.m_success = false;
+#if defined(FMT_SUPPORT)
+        ret.m_msg = fmt::format("Error: setsockopt(SO_SNDBUF) failed: {}", strerror(errno));
+#else
+        ret.m_msg = "setsockopt(SO_REUSEADDR) failed";
+#endif
+        return ret;
+    }      
 
     sockaddr_in localAddr {};
     localAddr.sin_family = AF_INET;
