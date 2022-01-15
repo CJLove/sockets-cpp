@@ -15,13 +15,13 @@ TcpServer::Client::Client(const char *ipAddr, int fd, uint16_t port)
 SocketRet TcpServer::Client::sendMsg(const unsigned char *msg, size_t size) const {
     SocketRet ret;
     if (m_sockfd != 0) {
-        ssize_t numBytesSent = send(m_sockfd, (void *)msg, size, 0);
+        ssize_t numBytesSent = send(m_sockfd, reinterpret_cast<const void *>(msg), size, 0);
         if (numBytesSent < 0) {  // send failed
             ret.m_success = false;
 #if defined(FMT_SUPPORT)            
-            ret.m_msg = fmt::format("Error: {}", strerror(errno));
+            ret.m_msg = fmt::format("Error: send() failed errno {}", errno);
 #else
-            ret.m_msg = strerror(errno);
+            ret.m_msg = "Error: send() failed";
 #endif
             return ret;
         }
@@ -56,9 +56,9 @@ SocketRet TcpServer::start(uint16_t port) {
     if (m_sockfd == -1) {  // socket failed
         ret.m_success = false;
 #if defined(FMT_SUPPORT)
-        ret.m_msg = fmt::format("Error: {}",strerror(errno));
+        ret.m_msg = fmt::format("Error: Socket creation failed errno{}",errno);
 #else                
-        ret.m_msg = strerror(errno);
+        ret.m_msg = "Error: Socket creation failed";
 #endif        
         return ret;
     }
@@ -67,10 +67,10 @@ SocketRet TcpServer::start(uint16_t port) {
     setsockopt(m_sockfd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
     // set TX and RX buffer sizes
     int option_value = RX_BUFFER_SIZE;
-    if (setsockopt(m_sockfd, SOL_SOCKET, SO_RCVBUF, (char*)&option_value, sizeof(option_value)) < 0) {
+    if (setsockopt(m_sockfd, SOL_SOCKET, SO_RCVBUF, reinterpret_cast<char*>(&option_value), sizeof(option_value)) < 0) {
         ret.m_success = false;
 #if defined(FMT_SUPPORT)
-        ret.m_msg = fmt::format("Error: setsockopt(SO_RCVBUF) failed: {}", strerror(errno));
+        ret.m_msg = fmt::format("Error: setsockopt(SO_RCVBUF) failed: errno {}", errno);
 #else
         ret.m_msg = "setsockopt(SO_REUSEADDR) failed";
 #endif
@@ -78,10 +78,10 @@ SocketRet TcpServer::start(uint16_t port) {
     }
 
     option_value = TX_BUFFER_SIZE;
-    if (setsockopt(m_sockfd, SOL_SOCKET, SO_SNDBUF, (char*)&option_value, sizeof(option_value)) < 0) {
+    if (setsockopt(m_sockfd, SOL_SOCKET, SO_SNDBUF, reinterpret_cast<char*>(&option_value), sizeof(option_value)) < 0) {
         ret.m_success = false;
 #if defined(FMT_SUPPORT)
-        ret.m_msg = fmt::format("Error: setsockopt(SO_SNDBUF) failed: {}", strerror(errno));
+        ret.m_msg = fmt::format("Error: setsockopt(SO_SNDBUF) failed: errno {}", errno);
 #else
         ret.m_msg = "setsockopt(SO_REUSEADDR) failed";
 #endif
@@ -93,11 +93,11 @@ SocketRet TcpServer::start(uint16_t port) {
     m_serverAddress.sin_addr.s_addr = htonl(INADDR_ANY);
     m_serverAddress.sin_port = htons(port);
 
-    int bindSuccess = bind(m_sockfd, (struct sockaddr *)&m_serverAddress, sizeof(m_serverAddress));
+    int bindSuccess = bind(m_sockfd, reinterpret_cast<struct sockaddr *>(&m_serverAddress), sizeof(m_serverAddress));
     if (bindSuccess == -1) {  // bind failed
         ret.m_success = false;
 #if defined(FMT_SUPPORT)
-        ret.m_msg = fmt::format("Error: {}",strerror(errno));
+        ret.m_msg = fmt::format("Error: errno {}",errno);
 #else                
         ret.m_msg = strerror(errno);
 #endif        
@@ -108,9 +108,9 @@ SocketRet TcpServer::start(uint16_t port) {
     if (listenSuccess == -1) {  // listen failed
         ret.m_success = false;
 #if defined(FMT_SUPPORT)
-        ret.m_msg = fmt::format("Error: {}", strerror(errno));
+        ret.m_msg = fmt::format("Error: listen() failed errno {}", errno);
 #else                
-        ret.m_msg = strerror(errno);
+        ret.m_msg = "Error: listen() failed";
 #endif        
         return ret;
     }
@@ -153,8 +153,8 @@ void TcpServer::serverTask() {
                 if (m_clients.count(fd) > 0) {
                     // data on client socket
                     Client &client = m_clients[fd];
-                    unsigned char msg[MAX_PACKET_SIZE];
-                    ssize_t numOfBytesReceived = recv(fd, msg, MAX_PACKET_SIZE, 0);
+                    std::array<unsigned char, MAX_PACKET_SIZE> msg;
+                    ssize_t numOfBytesReceived = recv(fd, &msg[0], MAX_PACKET_SIZE, 0);
                     if (numOfBytesReceived < 1) {
                         client.m_isConnected = false;
                         if (numOfBytesReceived == 0) {  // client closed connection
@@ -162,18 +162,20 @@ void TcpServer::serverTask() {
                             publishDisconnected(fd);
                         }
                     } else {
-                        publishClientMsg(fd, msg, static_cast<size_t>(numOfBytesReceived));
+                        publishClientMsg(fd, &msg[0], static_cast<size_t>(numOfBytesReceived));
                     }
                 } else {
                     // data on accept socket
                     socklen_t sosize = sizeof(m_clientAddress);
-                    int clientfd = accept(fd, (struct sockaddr *)&m_clientAddress, &sosize);
+                    int clientfd = accept(fd, reinterpret_cast<struct sockaddr *>(&m_clientAddress), &sosize);
                     if (clientfd == -1) {
                         // accept() failed
                         //std::cout << "accept returned " << strerror(errno) << "\n";
                     } else {
+                        std::array<char,INET_ADDRSTRLEN> addr;
+                        inet_ntop(AF_INET,&m_clientAddress.sin_addr,&addr[0],INET_ADDRSTRLEN);
                         m_clients.emplace(clientfd,
-                            Client(inet_ntoa(m_clientAddress.sin_addr), clientfd,
+                            Client(&addr[0], clientfd,
                                 static_cast<uint16_t>(ntohs(m_clientAddress.sin_port))));
                         FD_SET(clientfd, &m_fds);
                         publishClientConnect(clientfd);
@@ -264,9 +266,9 @@ SocketRet TcpServer::finish() {
             // close() failed
             ret.m_success = false;
 #if defined(FMT_SUPPORT)
-            ret.m_msg = fmt::format("Error: {}",strerror(errno));
+            ret.m_msg = fmt::format("Error: close() failed errno {}",errno);
 #else                        
-            ret.m_msg = strerror(errno);
+            ret.m_msg = "Error: close() failed";
 #endif            
             return ret;
         }
@@ -275,7 +277,11 @@ SocketRet TcpServer::finish() {
     // Close accept socket
     if (close(m_sockfd) == -1) {  // close failed
         ret.m_success = false;
-        ret.m_msg = strerror(errno);
+#if defined(FMT_SUPPORT)
+        ret.m_msg = fmt::format("Error: close() failed errno {}",errno);
+#else                
+        ret.m_msg = "Error: close() failed";
+#endif        
         return ret;
     }
     m_clients.clear();

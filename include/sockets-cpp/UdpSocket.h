@@ -21,7 +21,7 @@ public:
      *
      * @param callback - the callback recipient
      */
-    UdpSocket(ISocket *callback);
+    explicit UdpSocket(ISocket *callback);
 
     UdpSocket(const UdpSocket &) = delete;
     UdpSocket(UdpSocket &&) = delete;

@@ -10,14 +10,14 @@ namespace sockets {
  */
 struct SocketRet {
     /**
-     * @brief Indication of whether the operation succeeded or failed
-     */
-    bool m_success = false;
-
-    /**
      * @brief Error message text
      */
     std::string m_msg;
+
+    /**
+     * @brief Indication of whether the operation succeeded or failed
+     */
+    bool m_success = false;
 };
 
 /**

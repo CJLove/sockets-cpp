@@ -31,7 +31,7 @@ public:
      *
      * @param callback - pointer to the callback recipient
      */
-    TcpServer(IServerSocket *callback);
+    explicit TcpServer(IServerSocket *callback);
 
     TcpServer(const TcpServer &) = delete;
     TcpServer(TcpServer &&) = delete;
@@ -121,7 +121,7 @@ private:
         /**
          * @brief The TCP client's IP address
          */
-        std::string m_ip = "";
+        std::string m_ip;
 
         /**
          * @brief The socket file descriptor for the TCP client connection
