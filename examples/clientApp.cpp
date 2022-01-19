@@ -26,7 +26,7 @@ ClientApp::ClientApp(const char *remoteIp, uint16_t port) : m_client(this) {
             std::cout << "Connected to " << remoteIp << ":" << port << "\n";
             break;
         } else {
-            sleep(1);
+            sleep(1);   // NOLINT
         }
     }
 }
@@ -46,7 +46,7 @@ void ClientApp::onReceiveData(const unsigned char *data, size_t size) {
 
 void ClientApp::onDisconnect(const sockets::SocketRet &ret) {
     std::cout << "Disconnect: " << ret.m_msg << "\n";
-    exit(0);
+    exit(0);    // NOLINT
 }
 
 void usage() {
@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
     int c = 0;
     const char *addr = nullptr;
     uint16_t port = 0;
-    while ((c = getopt(argc, argv, "a:p:?")) != EOF) {
+    while ((c = getopt(argc, argv, "a:p:?")) != EOF) {  // NOLINT
         switch (c) {
         case 'a':
             addr = optarg;
@@ -67,11 +67,11 @@ int main(int argc, char **argv) {
             break;
         case '?':
             usage();
-            exit(1);
+            exit(1);    // NOLINT
         }
     }
 
-    ClientApp *app = new ClientApp(addr, port);
+    auto *app = new ClientApp(addr, port);
 
     while (true) {
         std::string data;

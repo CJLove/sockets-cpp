@@ -10,7 +10,7 @@ public:
 
     virtual ~ServerApp() = default;
 
-    void onClientConnect(const sockets::ClientHandle &client);
+    void onClientConnect(const sockets::ClientHandle &client) override;
 
     void onReceiveClientData(const sockets::ClientHandle &client, const unsigned char *data, size_t size) override;
 
@@ -72,18 +72,18 @@ void usage() {
 int main(int argc, char **argv) {
     int c = 0;
     uint16_t port = 0;
-    while ((c = getopt(argc, argv, "p:?")) != EOF) {
+    while ((c = getopt(argc, argv, "p:?")) != EOF) {    // NOLINT
         switch (c) {
         case 'p':
             port = static_cast<uint16_t>(std::stoul(optarg));
             break;
         case '?':
             usage();
-            exit(1);
+            exit(1);    // NOLINT
         }
     }
 
-    ServerApp *app = new ServerApp(port);
+    auto *app = new ServerApp(port);
 
     while (true) {
         std::string data;
