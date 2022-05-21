@@ -1,4 +1,5 @@
 #include "TcpClient.h"
+#include "AddrLookup.h"
 
 #if defined(FMT_SUPPORT)
     #include <fmt/core.h>
@@ -57,12 +58,7 @@ SocketRet TcpClient::connectTo(const char *remoteIp, uint16_t remotePort) {
 
     if (inetSuccess == 0) {  // inet_addr failed to parse address
         // if hostname is not in IP strings and dots format, try resolve it
-        struct hostent *host = nullptr;
-        struct in_addr **addrList = nullptr;
-        if ((host = gethostbyname(remoteIp)) == nullptr) {
-            close(m_sockfd);
-            m_sockfd = 0;
-            ret.m_success = false;
+        if (lookupHost(remoteIp,m_server.sin_addr.s_addr) != 0) {
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Failed to resolve hostname {}",remoteIp);
 #else
@@ -70,8 +66,6 @@ SocketRet TcpClient::connectTo(const char *remoteIp, uint16_t remotePort) {
 #endif
             return ret;
         }
-        addrList = reinterpret_cast<struct in_addr **>(host->h_addr_list);
-        m_server.sin_addr = *addrList[0];
     }
     m_server.sin_family = AF_INET;
     m_server.sin_port = htons(remotePort);
@@ -130,17 +124,17 @@ void TcpClient::ReceiveTask() {
     constexpr int64_t USEC_DELAY = 500000;
     while (!m_stop) {
         fd_set fds;
-        struct timeval tv { 0, USEC_DELAY };
+        struct timeval delay { 0, USEC_DELAY };
         FD_ZERO(&fds);
         FD_SET(m_sockfd, &fds);
-        int selectRet = select(m_sockfd + 1, &fds, nullptr, nullptr, &tv);
+        int selectRet = select(m_sockfd + 1, &fds, nullptr, nullptr, &delay);
         if (selectRet <= 0) {  // select failed or timeout
             if (m_stop) {
                 break;
             }
         } else if (FD_ISSET(m_sockfd, &fds)) {
             std::array<unsigned char, MAX_PACKET_SIZE> msg;
-            ssize_t numOfBytesReceived = recv(m_sockfd, &msg[0], MAX_PACKET_SIZE, 0);
+            ssize_t numOfBytesReceived = recv(m_sockfd, msg.data(), MAX_PACKET_SIZE, 0);
             if (numOfBytesReceived < 1) {
                 SocketRet ret;
                 ret.m_success = false;
@@ -161,7 +155,7 @@ void TcpClient::ReceiveTask() {
                 publishDisconnected(ret);
                 break;
             } 
-            publishServerMsg(&msg[0], static_cast<size_t>(numOfBytesReceived));
+            publishServerMsg(msg.data(), static_cast<size_t>(numOfBytesReceived));
         }
     }
 }

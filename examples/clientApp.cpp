@@ -46,7 +46,7 @@ void ClientApp::onReceiveData(const unsigned char *data, size_t size) {
 
 void ClientApp::onDisconnect(const sockets::SocketRet &ret) {
     std::cout << "Disconnect: " << ret.m_msg << "\n";
-    exit(0);    // NOLINT
+    exit(0);    // NOLINT 
 }
 
 void usage() {

@@ -16,6 +16,7 @@ set (sockets-cpp_SRC
     TcpClient.cpp
     TcpServer.cpp
     UdpSocket.cpp
+    AddrLookup.cpp
 )
 
 if(BUILD_SHARED_LIBS)

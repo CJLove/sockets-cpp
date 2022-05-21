@@ -8,8 +8,8 @@ constexpr size_t MAX_PACKET_SIZE = 65536;
 
 namespace sockets {
 
-TcpServer::Client::Client(const char *ipAddr, int fd, uint16_t port)
-    : m_ip(ipAddr), m_sockfd(fd), m_port(port), m_isConnected(true) {
+TcpServer::Client::Client(const char *ipAddr, int clientFd, uint16_t port)
+    : m_ip(ipAddr), m_sockfd(clientFd), m_port(port), m_isConnected(true) {
 }
 
 SocketRet TcpServer::Client::sendMsg(const unsigned char *msg, size_t size) const {
@@ -138,12 +138,12 @@ void TcpServer::serverTask() {
     constexpr int64_t USEC_DELAY = 500000;
 
     while (!m_stop) {
-        struct timeval tv {
+        struct timeval delay {
             0, USEC_DELAY
         };
         fd_set read_set = m_fds;
         int maxfds = findMaxFd();
-        int selectRet = select(maxfds, &read_set, nullptr, nullptr, &tv);
+        int selectRet = select(maxfds, &read_set, nullptr, nullptr, &delay);
         if (selectRet <= 0) {
             // select() failed or timed out, so retry after a shutdown check
             continue;
@@ -154,7 +154,7 @@ void TcpServer::serverTask() {
                     // data on client socket
                     Client &client = m_clients[fd];
                     std::array<unsigned char, MAX_PACKET_SIZE> msg;
-                    ssize_t numOfBytesReceived = recv(fd, &msg[0], MAX_PACKET_SIZE, 0);
+                    ssize_t numOfBytesReceived = recv(fd, msg.data(), MAX_PACKET_SIZE, 0);
                     if (numOfBytesReceived < 1) {
                         client.m_isConnected = false;
                         if (numOfBytesReceived == 0) {  // client closed connection
@@ -162,7 +162,7 @@ void TcpServer::serverTask() {
                             publishDisconnected(fd);
                         }
                     } else {
-                        publishClientMsg(fd, &msg[0], static_cast<size_t>(numOfBytesReceived));
+                        publishClientMsg(fd, msg.data(), static_cast<size_t>(numOfBytesReceived));
                     }
                 } else {
                     // data on accept socket
@@ -173,9 +173,9 @@ void TcpServer::serverTask() {
                         //std::cout << "accept returned " << strerror(errno) << "\n";
                     } else {
                         std::array<char,INET_ADDRSTRLEN> addr;
-                        inet_ntop(AF_INET,&m_clientAddress.sin_addr,&addr[0],INET_ADDRSTRLEN);
+                        inet_ntop(AF_INET,&m_clientAddress.sin_addr,addr.data(),INET_ADDRSTRLEN);
                         m_clients.emplace(clientfd,
-                            Client(&addr[0], clientfd,
+                            Client(addr.data(), clientfd,
                                 static_cast<uint16_t>(ntohs(m_clientAddress.sin_port))));
                         FD_SET(clientfd, &m_fds);
                         publishClientConnect(clientfd);

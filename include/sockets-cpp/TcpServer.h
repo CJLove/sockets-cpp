@@ -142,10 +142,10 @@ private:
          * @brief Construct a new Client object
          *
          * @param ipAddr - client's IP address
-         * @param fd - file descriptor for the client connection
+         * @param clientFd - file descriptor for the client connection
          * @param port - client's port number
          */
-        Client(const char *ipAddr, int fd, uint16_t port);
+        Client(const char *ipAddr, int clientFd, uint16_t port);
 
         /**
          * @brief Construct a new Client object
@@ -215,7 +215,7 @@ private:
     /**
      * @brief The set of file descriptor(s) for accepting connections and receiving data
      */
-    fd_set m_fds;
+    fd_set m_fds = {};
 
     /**
      * @brief Flag to stop the server thread

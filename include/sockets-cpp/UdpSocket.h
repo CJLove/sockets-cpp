@@ -102,7 +102,7 @@ private:
     /**
      * @brief The socket file descriptor
      */
-    int m_fd;
+    int m_fd = -1;
 
     /**
      * @brief Indicator that the receive thread should exit

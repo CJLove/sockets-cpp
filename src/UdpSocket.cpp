@@ -1,4 +1,5 @@
 #include "UdpSocket.h"
+#include "AddrLookup.h"
 #include <arpa/inet.h>
 #include <cstring>
 #include <netinet/in.h>
@@ -6,7 +7,6 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <cstring>
 #if defined(FMT_SUPPORT)
 #include <fmt/core.h>
 #endif
@@ -16,7 +16,7 @@ constexpr size_t MAX_PACKET_SIZE = 65535;
 namespace sockets {
 
 UdpSocket::UdpSocket(ISocket *callback)
-    : m_sockaddr({}), m_fd(-1), m_callback(callback), m_thread(&UdpSocket::ReceiveTask, this) {
+    : m_sockaddr({}), m_callback(callback), m_thread(&UdpSocket::ReceiveTask, this) {
 }
 
 UdpSocket::~UdpSocket() {
@@ -181,11 +181,7 @@ SocketRet UdpSocket::startUnicast(const char *remoteAddr, uint16_t localPort, ui
     m_sockaddr.sin_family = AF_INET;
     int inetSuccess = inet_aton(remoteAddr, &m_sockaddr.sin_addr);
     if (inetSuccess == 0) {// inet_addr failed to parse address
-        // if hostname is not in IP strings and dots format, try resolve it
-        struct hostent *host = nullptr;
-        struct in_addr **addrList = nullptr;
-        if ((host = gethostbyname(remoteAddr)) == nullptr) {
-            ret.m_success = false;
+        if (lookupHost(remoteAddr,m_sockaddr.sin_addr.s_addr) != 0) {
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Failed to resolve hostname {}",remoteAddr);
 #else
@@ -193,8 +189,6 @@ SocketRet UdpSocket::startUnicast(const char *remoteAddr, uint16_t localPort, ui
 #endif
             return ret;
         }
-        addrList = reinterpret_cast<struct in_addr **>(host->h_addr_list);
-        m_sockaddr.sin_addr = *addrList[0];
     }
 
 
@@ -215,12 +209,12 @@ void UdpSocket::ReceiveTask() {
     while (!m_stop) {
         if (m_fd != -1) {
             fd_set fds;
-            struct timeval tv {
+            struct timeval delay {
                 0, USEC_DELAY
             };
             FD_ZERO(&fds);
             FD_SET(m_fd, &fds);
-            int selectRet = select(m_fd + 1, &fds, nullptr, nullptr, &tv);
+            int selectRet = select(m_fd + 1, &fds, nullptr, nullptr, &delay);
             if (selectRet <= 0) {  // select failed or timeout
                 if (m_stop) {
                     break;
@@ -228,7 +222,7 @@ void UdpSocket::ReceiveTask() {
             } else if (FD_ISSET(m_fd, &fds)) {
 
                 std::array<unsigned char, MAX_PACKET_SIZE> msg;
-                ssize_t numOfBytesReceived = recv(m_fd, &msg[0], MAX_PACKET_SIZE, 0);
+                ssize_t numOfBytesReceived = recv(m_fd, msg.data(), MAX_PACKET_SIZE, 0);
                 if (numOfBytesReceived < 0) {
                     SocketRet ret;
                     ret.m_success = false;
@@ -248,7 +242,7 @@ void UdpSocket::ReceiveTask() {
                     }
                     break;
                 }
-                publishUdpMsg(&msg[0], static_cast<size_t>(numOfBytesReceived));
+                publishUdpMsg(msg.data(), static_cast<size_t>(numOfBytesReceived));
             }
         }
     }
