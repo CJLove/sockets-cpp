@@ -1,20 +1,20 @@
 #include <arpa/inet.h>
 #include <netdb.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstring>
 #include <sys/socket.h>
 #include <sys/types.h>
 namespace sockets {
 
 int lookupHost(const char *host, in_addr_t &addr) {
-    struct addrinfo hints, *res, *result;
+    struct addrinfo hints;
+    struct addrinfo *res = nullptr;
+    struct addrinfo *result = nullptr;
     int errcode = 0;
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;
 
-    errcode = getaddrinfo(host, NULL, &hints, &result);
+    errcode = getaddrinfo(host, nullptr, &hints, &result);
     if (errcode != 0) {
         return -1;
     }
@@ -22,7 +22,7 @@ int lookupHost(const char *host, in_addr_t &addr) {
     res = result;
 
     if (res != nullptr) {
-        addr = ((struct sockaddr_in *)res->ai_addr)->sin_addr.s_addr;
+        addr = reinterpret_cast<struct sockaddr_in *>(res->ai_addr)->sin_addr.s_addr;
     } else {
         errcode = -1;
     }
@@ -32,4 +32,4 @@ int lookupHost(const char *host, in_addr_t &addr) {
     return errcode;
 }
 
-}
+}   // namespace sockets
