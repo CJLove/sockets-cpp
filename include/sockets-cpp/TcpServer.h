@@ -61,8 +61,9 @@ public:
      * @brief Construct a new TCP Server object
      *
      * @param callback - pointer to the callback recipient
+     * @param options - optional socket options to specify SO_SNDBUF and SO_RCVBUF
      */
-    explicit TcpServer(IServerSocket *callback);
+    explicit TcpServer(IServerSocket *callback, SocketOpt *options = nullptr);
 
     TcpServer(const TcpServer &) = delete;
     TcpServer(TcpServer &&) = delete;
@@ -268,8 +269,10 @@ private:
      */
     std::thread m_thread;
 
-    const int TX_BUFFER_SIZE = 10240;
-    const int RX_BUFFER_SIZE = 10240;    
+    /**
+     * @brief Socket options for SO_SNDBUF and SO_RCVBUF
+     */
+    SocketOpt m_sockOptions;  
 };
 
 }  // Namespace sockets

@@ -9,7 +9,10 @@ constexpr size_t MAX_PACKET_SIZE = 4096;
 
 namespace sockets {
 
-TcpClient::TcpClient(IClientSocket *callback) : m_server({}), m_callback(callback) {
+TcpClient::TcpClient(IClientSocket *callback, SocketOpt *options) : m_server({}), m_callback(callback) {
+    if (options != nullptr) {
+        m_sockOptions = *options;
+    }
 }
 
 TcpClient::~TcpClient() {
@@ -32,8 +35,7 @@ SocketRet TcpClient::connectTo(const char *remoteIp, uint16_t remotePort) {
     }
 
     // set TX and RX buffer sizes
-    int option_value = RX_BUFFER_SIZE;
-    if (setsockopt(m_sockfd, SOL_SOCKET, SO_RCVBUF, reinterpret_cast<char*>(&option_value), sizeof(option_value)) < 0) {
+    if (setsockopt(m_sockfd, SOL_SOCKET, SO_RCVBUF, reinterpret_cast<char*>(&m_sockOptions.m_rxBufSize), sizeof(m_sockOptions.m_rxBufSize)) < 0) {
         ret.m_success = false;
 #if defined(FMT_SUPPORT)
         ret.m_msg = fmt::format("Error: setsockopt(SO_RCVBUF) failed: errno {}", errno);
@@ -43,8 +45,7 @@ SocketRet TcpClient::connectTo(const char *remoteIp, uint16_t remotePort) {
         return ret;
     }
 
-    option_value = TX_BUFFER_SIZE;
-    if (setsockopt(m_sockfd, SOL_SOCKET, SO_SNDBUF, reinterpret_cast<char*>(&option_value), sizeof(option_value)) < 0) {
+    if (setsockopt(m_sockfd, SOL_SOCKET, SO_SNDBUF, reinterpret_cast<char*>(&m_sockOptions.m_txBufSize), sizeof(m_sockOptions.m_txBufSize)) < 0) {
         ret.m_success = false;
 #if defined(FMT_SUPPORT)
         ret.m_msg = fmt::format("Error: setsockopt(SO_SNDBUF) failed: errno {}", errno);

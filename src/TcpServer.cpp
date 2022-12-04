@@ -41,7 +41,10 @@ SocketRet TcpServer::Client::sendMsg(const unsigned char *msg, size_t size) cons
     return ret;
 }
 
-TcpServer::TcpServer(IServerSocket *callback) : m_serverAddress({}), m_clientAddress({}), m_fds({}), m_callback(callback) {
+TcpServer::TcpServer(IServerSocket *callback, SocketOpt *options) : m_serverAddress({}), m_clientAddress({}), m_fds({}), m_callback(callback) {
+    if (options != nullptr) {
+        m_sockOptions = *options;
+    }
 }
 
 TcpServer::~TcpServer() {
@@ -66,8 +69,7 @@ SocketRet TcpServer::start(uint16_t port) {
     int option = 1;
     setsockopt(m_sockfd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
     // set TX and RX buffer sizes
-    int option_value = RX_BUFFER_SIZE;
-    if (setsockopt(m_sockfd, SOL_SOCKET, SO_RCVBUF, reinterpret_cast<char*>(&option_value), sizeof(option_value)) < 0) {
+    if (setsockopt(m_sockfd, SOL_SOCKET, SO_RCVBUF, reinterpret_cast<char*>(&m_sockOptions.m_rxBufSize), sizeof(m_sockOptions.m_rxBufSize)) < 0) {
         ret.m_success = false;
 #if defined(FMT_SUPPORT)
         ret.m_msg = fmt::format("Error: setsockopt(SO_RCVBUF) failed: errno {}", errno);
@@ -77,8 +79,7 @@ SocketRet TcpServer::start(uint16_t port) {
         return ret;
     }
 
-    option_value = TX_BUFFER_SIZE;
-    if (setsockopt(m_sockfd, SOL_SOCKET, SO_SNDBUF, reinterpret_cast<char*>(&option_value), sizeof(option_value)) < 0) {
+    if (setsockopt(m_sockfd, SOL_SOCKET, SO_SNDBUF, reinterpret_cast<char*>(&m_sockOptions.m_txBufSize), sizeof(m_sockOptions.m_txBufSize)) < 0) {
         ret.m_success = false;
 #if defined(FMT_SUPPORT)
         ret.m_msg = fmt::format("Error: setsockopt(SO_SNDBUF) failed: errno {}", errno);

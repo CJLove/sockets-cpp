@@ -50,8 +50,9 @@ public:
      * @brief Construct a new Tcp Client object
      *
      * @param callback - pointer to the callback object which will handle notifications
+     * @param options - optional socket options to configure SO_SNDBUF and SO_RCVBUF
      */
-    explicit TcpClient(IClientSocket *callback);
+    TcpClient(IClientSocket *callback, SocketOpt *options = nullptr);
 
     TcpClient(const TcpClient &) = delete;
     TcpClient(TcpClient &&) = delete;
@@ -135,8 +136,10 @@ private:
      */
     IClientSocket *m_callback = nullptr;
 
-    const int TX_BUFFER_SIZE = 10240;
-    const int RX_BUFFER_SIZE = 10240; 
+    /**
+     * @brief Socket options for SO_SNDBUF and SO_RCVBUF
+     */
+    SocketOpt m_sockOptions;
 };
 
 }  // Namespace sockets
