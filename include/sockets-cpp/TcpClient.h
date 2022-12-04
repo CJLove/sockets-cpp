@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ISocket.h"
+#include "SocketCommon.h"
 #include <arpa/inet.h>
 #include <cerrno>
 #include <iostream>
@@ -17,7 +17,28 @@
 
 namespace sockets {
 
-using sockets::ISocket;
+/**
+ * @brief Interface class for receiving data or disconnection notifications from
+ * TcpClient socket classes
+ *
+ */
+class IClientSocket {
+public:
+    /**
+     * @brief Receive data from a TCP client or UDP socket connection
+     *
+     * @param data - pointer to received data
+     * @param size - length of received data
+     */
+    virtual void onReceiveData(const unsigned char *data, size_t size) = 0;
+
+    /**
+     * @brief Receive notification that TCP server connection has disconnected
+     *
+     * @param ret - Error information
+     */
+    virtual void onDisconnect(const SocketRet &ret) = 0;
+};
 
 /**
  * @brief TcpClient encapsulates a TCP client socket connection to a server
@@ -30,7 +51,7 @@ public:
      *
      * @param callback - pointer to the callback object which will handle notifications
      */
-    explicit TcpClient(ISocket *callback);
+    explicit TcpClient(IClientSocket *callback);
 
     TcpClient(const TcpClient &) = delete;
     TcpClient(TcpClient &&) = delete;
@@ -112,7 +133,7 @@ private:
     /**
      * @brief Pointer to the registered callback receipient
      */
-    ISocket *m_callback = nullptr;
+    IClientSocket *m_callback = nullptr;
 
     const int TX_BUFFER_SIZE = 10240;
     const int RX_BUFFER_SIZE = 10240; 

@@ -1,9 +1,8 @@
-#include "ISocket.h"
 #include "UdpSocket.h"
 #include <iostream>
 #include <unistd.h>
 
-class McastApp : public sockets::ISocket {
+class McastApp : public sockets::IUdpSocket {
 public:
     // UDP Multicast
     McastApp(const char *multicastAddr, uint16_t port);
@@ -13,8 +12,6 @@ public:
     void onReceiveData(const unsigned char *data, size_t size) override;
 
     void sendMsg(const unsigned char *data, size_t len);
-
-    void onDisconnect(const sockets::SocketRet &ret) override;
 
 private:
     sockets::UdpSocket m_mcast;
@@ -40,11 +37,6 @@ void McastApp::onReceiveData(const unsigned char *data, size_t size) {
     std::string str(reinterpret_cast<const char *>(data), size);
 
     std::cout << "Received: " << str << "\n";
-}
-
-void McastApp::onDisconnect(const sockets::SocketRet &ret)
-{
-    std::cout << "Peer disconnected\n";
 }
 
 void usage() {

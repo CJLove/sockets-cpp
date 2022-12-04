@@ -15,8 +15,11 @@ constexpr size_t MAX_PACKET_SIZE = 65535;
 
 namespace sockets {
 
-UdpSocket::UdpSocket(ISocket *callback)
+UdpSocket::UdpSocket(IUdpSocket *callback, SocketOpt *options)
     : m_sockaddr({}), m_callback(callback), m_thread(&UdpSocket::ReceiveTask, this) {
+    if (options != nullptr) {
+        m_sockOptions = *options;
+    }
 }
 
 UdpSocket::~UdpSocket() {
@@ -47,8 +50,7 @@ SocketRet UdpSocket::startMcast(const char *mcastAddr, uint16_t port) {
         return ret;
     }
     // Set TX and RX buffer sizes
-    int option_value = RX_BUFFER_SIZE;
-    if (setsockopt(m_fd, SOL_SOCKET, SO_RCVBUF, reinterpret_cast<char*>(&option_value), sizeof(option_value)) < 0) {
+    if (setsockopt(m_fd, SOL_SOCKET, SO_RCVBUF, reinterpret_cast<char*>(&m_sockOptions.m_rxBufSize), sizeof(m_sockOptions.m_rxBufSize)) < 0) {
         ret.m_success = false;
 #if defined(FMT_SUPPORT)
         ret.m_msg = fmt::format("Error: setsockopt(SO_RCVBUF) failed: errno {}", errno);
@@ -58,8 +60,7 @@ SocketRet UdpSocket::startMcast(const char *mcastAddr, uint16_t port) {
         return ret;
     }
 
-    option_value = TX_BUFFER_SIZE;
-    if (setsockopt(m_fd, SOL_SOCKET, SO_SNDBUF, reinterpret_cast<char*>(&option_value), sizeof(option_value)) < 0) {
+    if (setsockopt(m_fd, SOL_SOCKET, SO_SNDBUF, reinterpret_cast<char*>(&m_sockOptions.m_txBufSize), sizeof(m_sockOptions.m_txBufSize)) < 0) {
         ret.m_success = false;
 #if defined(FMT_SUPPORT)
         ret.m_msg = fmt::format("Error: setsockopt(SO_SNDBUF) failed: errno {}", errno);
@@ -134,24 +135,22 @@ SocketRet UdpSocket::startUnicast(uint16_t localPort) {
     }
 
     // Set TX and RX buffer sizes
-    int option_value = RX_BUFFER_SIZE;
-    if (setsockopt(m_fd, SOL_SOCKET, SO_RCVBUF, reinterpret_cast<char*>(&option_value), sizeof(option_value)) < 0) {
+    if (setsockopt(m_fd, SOL_SOCKET, SO_RCVBUF, reinterpret_cast<char*>(&m_sockOptions.m_rxBufSize), sizeof(m_sockOptions.m_rxBufSize)) < 0) {
         ret.m_success = false;
 #if defined(FMT_SUPPORT)
         ret.m_msg = fmt::format("Error: setsockopt(SO_RCVBUF) failed: errno {}", errno);
 #else
-        ret.m_msg = "setsockopt(SO_REUSEADDR) failed";
+        ret.m_msg = "setsockopt(SO_RCVBUF) failed";
 #endif
         return ret;
     }
 
-    option_value = TX_BUFFER_SIZE;
-    if (setsockopt(m_fd, SOL_SOCKET, SO_SNDBUF, reinterpret_cast<char*>(&option_value), sizeof(option_value)) < 0) {
+    if (setsockopt(m_fd, SOL_SOCKET, SO_SNDBUF, reinterpret_cast<char*>(&m_sockOptions.m_txBufSize), sizeof(m_sockOptions.m_txBufSize)) < 0) {
         ret.m_success = false;
 #if defined(FMT_SUPPORT)
         ret.m_msg = fmt::format("Error: setsockopt(SO_SNDBUF) failed: errno {}", errno);
 #else
-        ret.m_msg = "setsockopt(SO_REUSEADDR) failed";
+        ret.m_msg = "setsockopt(SO_SNDBUF) failed";
 #endif
         return ret;
     }      

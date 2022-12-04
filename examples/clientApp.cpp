@@ -1,8 +1,7 @@
-#include "ISocket.h"
 #include "TcpClient.h"
 #include <unistd.h>
 
-class ClientApp : public sockets::ISocket {
+class ClientApp : public sockets::IClientSocket {
 public:
     // TCP Client
     ClientApp(const char *remoteIp, uint16_t port);

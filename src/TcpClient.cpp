@@ -9,7 +9,7 @@ constexpr size_t MAX_PACKET_SIZE = 4096;
 
 namespace sockets {
 
-TcpClient::TcpClient(ISocket *callback) : m_server({}), m_callback(callback) {
+TcpClient::TcpClient(IClientSocket *callback) : m_server({}), m_callback(callback) {
 }
 
 TcpClient::~TcpClient() {

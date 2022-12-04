@@ -1,5 +1,5 @@
 #pragma once
-#include "ISocket.h"
+#include "SocketCommon.h"
 #include <cstdint>
 #include <netinet/in.h>
 #include <string>
@@ -8,7 +8,23 @@
 
 namespace sockets {
 
-using sockets::ISocket;
+/**
+ * @brief Interface class for receiving data or disconnection notifications from
+ * UdpSocket
+ *
+ */
+class IUdpSocket {
+public:
+    /**
+     * @brief Receive data from a TCP client or UDP socket connection
+     *
+     * @param data - pointer to received data
+     * @param size - length of received data
+     */
+    virtual void onReceiveData(const unsigned char *data, size_t size) = 0;
+
+};
+
 
 /**
  * @brief The UdpSocket class represents a UDP unicast or multicast socket connection
@@ -20,8 +36,9 @@ public:
      * @brief Construct a new UDP Socket object
      *
      * @param callback - the callback recipient
+     * @param options - optional socket options
      */
-    explicit UdpSocket(ISocket *callback);
+    UdpSocket(IUdpSocket *callback, SocketOpt *options = nullptr);
 
     UdpSocket(const UdpSocket &) = delete;
     UdpSocket(UdpSocket &&) = delete;
@@ -112,15 +129,18 @@ private:
     /**
      * @brief Pointer to the callback recipient
      */
-    ISocket *m_callback;
+    IUdpSocket *m_callback;
 
     /**
      * @brief Handle of the receive thread
      */
     std::thread m_thread;
 
-    const int TX_BUFFER_SIZE = 10240;
-    const int RX_BUFFER_SIZE = 10240;
+    /**
+     * @brief Socket options for SO_SNDBUF and SO_RCVBUF
+     */
+    SocketOpt m_sockOptions;
+
 };
 
 }  // Namespace sockets
