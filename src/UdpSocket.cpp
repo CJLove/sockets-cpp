@@ -25,7 +25,8 @@ UdpSocket::~UdpSocket() {
 
 SocketRet UdpSocket::startMcast(const char *mcastAddr, uint16_t port) {
     SocketRet ret;
-    if ((m_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+    m_fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (m_fd < 0) {
         ret.m_success = false;
 #if defined(FMT_SUPPORT)
         ret.m_msg = fmt::format("Error: socket() failed: errno {}", errno);
@@ -110,7 +111,8 @@ SocketRet UdpSocket::startMcast(const char *mcastAddr, uint16_t port) {
 
 SocketRet UdpSocket::startUnicast(uint16_t localPort) {
     SocketRet ret;
-    if ((m_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+    m_fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (m_fd < 0) {
         ret.m_success = false;
 #if defined(FMT_SUPPORT)
         ret.m_msg = fmt::format("Error: socket() failed: errno {}", errno);
