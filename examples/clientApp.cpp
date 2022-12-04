@@ -54,11 +54,11 @@ void usage() {
 }
 
 int main(int argc, char **argv) {
-    int c = 0;
+    int arg = 0;
     const char *addr = nullptr;
     uint16_t port = 0;
-    while ((c = getopt(argc, argv, "a:p:?")) != EOF) {  // NOLINT
-        switch (c) {
+    while ((arg = getopt(argc, argv, "a:p:?")) != EOF) {  // NOLINT
+        switch (arg) {
         case 'a':
             addr = optarg;
             break;

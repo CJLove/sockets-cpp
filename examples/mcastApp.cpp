@@ -14,7 +14,7 @@ public:
 
     void sendMsg(const unsigned char *data, size_t len);
 
-    void onDisconnect(const sockets::SocketRet &ret);
+    void onDisconnect(const sockets::SocketRet &ret) override;
 
 private:
     sockets::UdpSocket m_mcast;
@@ -52,11 +52,11 @@ void usage() {
 }
 
 int main(int argc, char **argv) {
-    int c = 0;
+    int arg = 0;
     const char *addr = nullptr;
     uint16_t port = 0;
-    while ((c = getopt(argc, argv, "m:p:?")) != EOF) {
-        switch (c) {
+    while ((arg = getopt(argc, argv, "m:p:?")) != EOF) { // NOLINT
+        switch (arg) {
         case 'm':
             addr = optarg;
             break;
@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
             break;
         case '?':
             usage();
-            exit(1);
+            exit(1);    // NOLINT
         }
     }
 

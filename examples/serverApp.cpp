@@ -20,11 +20,11 @@ public:
 
 private:
     sockets::TcpServer m_server;
-    int m_clientIdx;
+    int m_clientIdx = 0;
     std::set<int> m_clients;
 };
 
-ServerApp::ServerApp(uint16_t port) : m_server(this), m_clientIdx(0) {
+ServerApp::ServerApp(uint16_t port) : m_server(this) {
     sockets::SocketRet ret = m_server.start(port);
     if (ret.m_success) {
         std::cout << "Server started on port " << port << "\n";
@@ -70,10 +70,10 @@ void usage() {
 }
 
 int main(int argc, char **argv) {
-    int c = 0;
+    int arg = 0;
     uint16_t port = 0;
-    while ((c = getopt(argc, argv, "p:?")) != EOF) {    // NOLINT
-        switch (c) {
+    while ((arg = getopt(argc, argv, "p:?")) != EOF) {    // NOLINT
+        switch (arg) {
         case 'p':
             port = static_cast<uint16_t>(std::stoul(optarg));
             break;
