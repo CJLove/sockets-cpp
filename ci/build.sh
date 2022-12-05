@@ -85,12 +85,12 @@ make
 ret=$?
 [ $ret -ne 0 ] && exit $ret
 
-# TODO: Run tests
-# [ ! -x ./test/socketsTests ] && { echo "ERROR: unit tests not built!"; exit 1; }
+# Run tests
+[ ! -x ./test/socketsTests ] && { echo "ERROR: unit tests not built!"; exit 1; }
 
 # Run unit tests
-#./test/socketsTests
-#ret=$?
+./test/socketsTests
+ret=$?
 
 # Return result
 exit $ret

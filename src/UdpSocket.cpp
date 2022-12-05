@@ -11,7 +11,11 @@
 #include <fmt/core.h>
 #endif
 
-constexpr size_t MAX_PACKET_SIZE = 65535;
+/**
+ * @brief Max UDP datagram size for UDP protocol
+ * 
+ */
+constexpr size_t MAX_PACKET_SIZE = 65507;
 
 namespace sockets {
 
@@ -55,7 +59,7 @@ SocketRet UdpSocket::startMcast(const char *mcastAddr, uint16_t port) {
 #if defined(FMT_SUPPORT)
         ret.m_msg = fmt::format("Error: setsockopt(SO_RCVBUF) failed: errno {}", errno);
 #else
-        ret.m_msg = "setsockopt(SO_REUSEADDR) failed";
+        ret.m_msg = "setsockopt(SO_RCVBUF) failed";
 #endif
         return ret;
     }
@@ -65,7 +69,7 @@ SocketRet UdpSocket::startMcast(const char *mcastAddr, uint16_t port) {
 #if defined(FMT_SUPPORT)
         ret.m_msg = fmt::format("Error: setsockopt(SO_SNDBUF) failed: errno {}", errno);
 #else
-        ret.m_msg = "setsockopt(SO_REUSEADDR) failed";
+        ret.m_msg = "setsockopt(SO_SNDBUF) failed";
 #endif
         return ret;
     }       
@@ -199,7 +203,7 @@ SocketRet UdpSocket::startUnicast(const char *remoteAddr, uint16_t localPort, ui
     return startUnicast(localPort);
 }
 
-void UdpSocket::publishUdpMsg(const unsigned char *msg, size_t msgSize) {
+void UdpSocket::publishUdpMsg(const char *msg, size_t msgSize) {
     if (m_callback != nullptr) {
         m_callback->onReceiveData(msg, msgSize);
     }
@@ -222,7 +226,7 @@ void UdpSocket::ReceiveTask() {
                 }
             } else if (FD_ISSET(m_fd, &fds)) {
 
-                std::array<unsigned char, MAX_PACKET_SIZE> msg;
+                std::array<char, MAX_PACKET_SIZE> msg;
                 ssize_t numOfBytesReceived = recv(m_fd, msg.data(), MAX_PACKET_SIZE, 0);
                 if (numOfBytesReceived < 0) {
                     SocketRet ret;
@@ -249,7 +253,7 @@ void UdpSocket::ReceiveTask() {
     }
 }
 
-SocketRet UdpSocket::sendMsg(const unsigned char *msg, size_t size) {
+SocketRet UdpSocket::sendMsg(const char *msg, size_t size) {
     SocketRet ret;
     // If destination addr/port specified
     if (m_sockaddr.sin_port != 0) {

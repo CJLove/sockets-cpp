@@ -9,9 +9,9 @@ public:
 
     virtual ~UnicastApp() = default;
 
-    void onReceiveData(const unsigned char *data, size_t size) override;
+    void onReceiveData(const char *data, size_t size) override;
 
-    void sendMsg(const unsigned char *data, size_t len);
+    void sendMsg(const char *data, size_t len);
 
 private:
     sockets::UdpSocket m_unicast;
@@ -26,14 +26,14 @@ UnicastApp::UnicastApp(const char *remoteAddr, uint16_t localPort, uint16_t port
     }
 }
 
-void UnicastApp::sendMsg(const unsigned char *data, size_t len) {
+void UnicastApp::sendMsg(const char *data, size_t len) {
     auto ret = m_unicast.sendMsg(data, len);
     if (!ret.m_success) {
         std::cout << "Send Error: " << ret.m_msg << "\n";
     }
 }
 
-void UnicastApp::onReceiveData(const unsigned char *data, size_t size) {
+void UnicastApp::onReceiveData(const char *data, size_t size) {
     std::string str(reinterpret_cast<const char *>(data), size);
 
     std::cout << "Received: " << str << "\n";
@@ -74,7 +74,7 @@ int main(int argc, char **argv) {
         if (data == "quit") {
             break;
         }
-        app->sendMsg(reinterpret_cast<const unsigned char *>(data.data()), data.size());
+        app->sendMsg(data.data(), data.size());
     }
 
     delete app;

@@ -77,7 +77,7 @@ endif(NOT CMAKE_BUILD_TYPE)
 
 option(FMT_SUPPORT "Use Fmt for string formatting" ON)
 option(BUILD_EXAMPLES "Build examples" OFF)
-option(BUILD_TESTS "Build unit tests." OFF)
+option(BUILD_TESTS "Build unit tests." ON)
 option(BUILD_COVERAGE "Build for code coverage." OFF)
 option(BUILD_SHARED_LIBS "Build Shared Libraries" ON)
 option(BUILD_STATIC_LIBS "Build Static Libraries" OFF)
@@ -118,8 +118,10 @@ endif(FMT_SUPPORT)
 # Threads
 find_package(Threads)
 
-# Google Test
-find_package(GTest)
+if (BUILD_TESTS)
+  # Google Test
+  find_package(GTest REQUIRED)
+endif()
 
 # clang-tidy
 if(ENABLE_CLANG_TIDY)
@@ -201,14 +203,14 @@ add_subdirectory(src)
 if (BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif(BUILD_EXAMPLES)
-#if (BUILD_TESTS)
-#    include(CTest)
-#    if (BUILD_COVERAGE)
-#        include (CodeCoverage)
-#        setup_target_for_coverage( msglibCoverage test/msglibTests coverage )
-#    endif (BUILD_COVERAGE)
-#    add_subdirectory(test)
-#endif(BUILD_TESTS)
+if (BUILD_TESTS)
+    include(CTest)
+    if (BUILD_COVERAGE)
+        include (CodeCoverage)
+        setup_target_for_coverage( socketCoverage test/socketTests coverage )
+   endif (BUILD_COVERAGE)
+   add_subdirectory(test)
+endif(BUILD_TESTS)
 
 #---------------------------------------------------------------------------------------
 # Addons

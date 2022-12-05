@@ -21,7 +21,7 @@ public:
      * @param data - pointer to received data
      * @param size - length of received data
      */
-    virtual void onReceiveData(const unsigned char *data, size_t size) = 0;
+    virtual void onReceiveData(const char *data, size_t size) = 0;
 
 };
 
@@ -88,7 +88,7 @@ public:
      * @param size - length of the message data
      * @return SocketRet - indication that the message was sent successfully
      */
-    SocketRet sendMsg(const unsigned char *msg, size_t size);
+    SocketRet sendMsg(const char *msg, size_t size);
 
     /**
      * @brief Shutdown the UDP socket
@@ -104,7 +104,7 @@ private:
      * @param msg - pointer to the message data
      * @param msgSize - length of the message data
      */
-    void publishUdpMsg(const unsigned char *msg, size_t msgSize);
+    void publishUdpMsg(const char *msg, size_t msgSize);
 
     /**
      * @brief The receive thread for receiving data from UDP peer(s).

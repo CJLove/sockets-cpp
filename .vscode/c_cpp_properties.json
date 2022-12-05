@@ -6,6 +6,7 @@
                 "${workspaceFolder}/include",
                 "${workspaceFolder}/include/sockets-cpp",
                 "${workspaceFolder}/src",
+                "${workspaceFolder}/test",
                 "${workspaceFolder}/examples"
             ],
             "defines": [ "FMT_SUPPORT" ],
