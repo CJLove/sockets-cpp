@@ -85,6 +85,8 @@ make
 ret=$?
 [ $ret -ne 0 ] && exit $ret
 
+export LD_LIBRARY_PATH=/usr/local/lib64:$LD_LIBRARY_PATH
+
 # Run tests
 [ ! -x ./test/socketTests ] && { echo "ERROR: unit tests not built!"; exit 1; }
 
