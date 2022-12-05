@@ -27,8 +27,8 @@ TEST(AddrLookup, invalidname)
 
 }
 
-TEST(AddrLookup, localhost6)
-{
-    in_addr_t addr {};
-    EXPECT_EQ(0, sockets::lookupHost("localhost6",addr));
-}
+// TEST(AddrLookup, localhost6)
+// {
+//     in_addr_t addr {};
+//     EXPECT_EQ(0, sockets::lookupHost("localhost6",addr));
+// }
