@@ -86,10 +86,10 @@ ret=$?
 [ $ret -ne 0 ] && exit $ret
 
 # Run tests
-[ ! -x ./test/socketsTests ] && { echo "ERROR: unit tests not built!"; exit 1; }
+[ ! -x ./test/socketTests ] && { echo "ERROR: unit tests not built!"; exit 1; }
 
 # Run unit tests
-./test/socketsTests
+./test/socketTests
 ret=$?
 
 # Return result
