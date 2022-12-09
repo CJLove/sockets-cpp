@@ -4,6 +4,7 @@
 #include <netinet/in.h>
 #include <string>
 #include <sys/socket.h>
+#include <atomic>
 #include <thread>
 
 namespace sockets {
@@ -38,7 +39,7 @@ public:
      * @param callback - the callback recipient
      * @param options - optional socket options
      */
-    UdpSocket(IUdpSocket *callback, SocketOpt *options = nullptr);
+    explicit UdpSocket(IUdpSocket *callback, SocketOpt *options = nullptr);
 
     UdpSocket(const UdpSocket &) = delete;
     UdpSocket(UdpSocket &&) = delete;
@@ -124,7 +125,7 @@ private:
     /**
      * @brief Indicator that the receive thread should exit
      */
-    bool m_stop = false;
+    std::atomic_bool m_stop;
 
     /**
      * @brief Pointer to the callback recipient

@@ -8,25 +8,26 @@ TEST(UdpSocket,unicast)
     UdpTester test1;
     UdpTester test2;
 
-    test1.m_socket.startUnicast("127.0.0.1",5000,5001);
-    test2.m_socket.startUnicast(5001);
+    auto ret1 = test1.m_socket.startUnicast("127.0.0.1",UDP_PORT1,UDP_PORT2);
+    auto ret2 = test2.m_socket.startUnicast(UDP_PORT2);
 
-    EXPECT_EQ("",test1.m_lastReceivedData);
-    EXPECT_EQ("",test2.m_lastReceivedData);
+    EXPECT_TRUE(ret1.m_success);
+    EXPECT_TRUE(ret2.m_success);
+
+    EXPECT_TRUE(test1.receiveData().empty());
+    EXPECT_TRUE(test2.receiveData().empty());
 
     std::string testMessage {"testMessage"};
     test1.m_socket.sendMsg(testMessage.data(),testMessage.size());
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    EXPECT_TRUE(test2.wait(5));
 
-    EXPECT_EQ(testMessage,test2.m_lastReceivedData);
+    auto test2Data = test2.receiveData();
+    EXPECT_FALSE(test2Data.empty());
+    if (!test2Data.empty()) {
+        EXPECT_EQ(testMessage,test2Data[0]);
+    }
 
-    // Explicitly stop/close each socket; this otherwise happens in the
-    // destructor
-    auto ret1 = test1.m_socket.finish();
-    EXPECT_EQ(true,ret1.m_success);
-    auto ret2 = test2.m_socket.finish();
-    EXPECT_EQ(true,ret2.m_success);
 }
 
 TEST(UdpSocket,unicast6000) 
@@ -34,18 +35,24 @@ TEST(UdpSocket,unicast6000)
     UdpTester test1;
     UdpTester test2;
 
-    test1.m_socket.startUnicast("127.0.0.1",5000,5001);
-    test2.m_socket.startUnicast(5001);
+    auto ret1 = test1.m_socket.startUnicast("127.0.0.1",UDP_PORT1,UDP_PORT2);
+    auto ret2 = test2.m_socket.startUnicast(UDP_PORT2);
 
-    EXPECT_EQ("",test1.m_lastReceivedData);
-    EXPECT_EQ("",test2.m_lastReceivedData);
+    EXPECT_TRUE(ret1.m_success);
+    EXPECT_TRUE(ret2.m_success);
 
-    std::string testMessage(6000,'A');
+    EXPECT_TRUE(test1.receiveData().empty());
+    EXPECT_TRUE(test2.receiveData().empty());
+
+    std::string testMessage(UDP_MSG_SIZE,'A');
     test1.m_socket.sendMsg(testMessage.data(),testMessage.size());
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(20));
-
-    EXPECT_EQ(testMessage,test2.m_lastReceivedData);
+    EXPECT_TRUE(test2.wait(5));
+    auto test2Data = test2.receiveData();
+    EXPECT_FALSE(test2Data.empty());
+    if (!test2Data.empty()) {
+        EXPECT_EQ(testMessage,test2Data[0]);
+    }
 }
 
 TEST(UdpSocket,unicast65507) 
@@ -53,19 +60,25 @@ TEST(UdpSocket,unicast65507)
     UdpTester test1;
     UdpTester test2;
 
-    test1.m_socket.startUnicast("127.0.0.1",5000,5001);
-    test2.m_socket.startUnicast(5001);
+    auto ret1 = test1.m_socket.startUnicast("127.0.0.1",UDP_PORT1,UDP_PORT2);
+    auto ret2 = test2.m_socket.startUnicast(UDP_PORT2);
 
-    EXPECT_EQ("",test1.m_lastReceivedData);
-    EXPECT_EQ("",test2.m_lastReceivedData);
+    EXPECT_TRUE(ret1.m_success);
+    EXPECT_TRUE(ret2.m_success);
+
+    EXPECT_TRUE(test1.receiveData().empty());
+    EXPECT_TRUE(test2.receiveData().empty());
 
     // Maximum UDP datagram size
-    std::string testMessage(65507,'A');
+    std::string testMessage(UDP_MAX_MSG_SIZE,'A');
     test1.m_socket.sendMsg(testMessage.data(),testMessage.size());
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(20));
-
-    EXPECT_EQ(testMessage,test2.m_lastReceivedData);
+    EXPECT_TRUE(test2.wait(5));
+    auto test2Data = test2.receiveData();
+    EXPECT_FALSE(test2Data.empty());
+    if (!test2Data.empty()) {
+        EXPECT_EQ(testMessage,test2Data[0]);
+    }
 }
 
 TEST(UdpSocket,unicastFail) 
@@ -73,17 +86,20 @@ TEST(UdpSocket,unicastFail)
     UdpTester test1;
     UdpTester test2;
 
-    test1.m_socket.startUnicast("127.0.0.1",5000,5002);
-    test2.m_socket.startUnicast(5001);
+    auto ret1 = test1.m_socket.startUnicast("127.0.0.1",UDP_PORT1,UDP_PORT2);
+    auto ret2 = test2.m_socket.startUnicast(UDP_PORT1);
 
-    EXPECT_EQ("",test1.m_lastReceivedData);
-    EXPECT_EQ("",test2.m_lastReceivedData);
+    EXPECT_TRUE(ret1.m_success);
+    EXPECT_TRUE(ret2.m_success);
+
+    EXPECT_TRUE(test1.receiveData().empty());
+    EXPECT_TRUE(test2.receiveData().empty());
 
     std::string testMessage {"testMessage"};
     test1.m_socket.sendMsg(testMessage.data(),testMessage.size());
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    EXPECT_FALSE(test2.wait(5));
+    auto test2Data = test2.receiveData();
+    EXPECT_TRUE(test2Data.empty());
 
-    EXPECT_EQ("",test2.m_lastReceivedData);
 }
-

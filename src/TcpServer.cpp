@@ -1,5 +1,6 @@
 #include "TcpServer.h"
 #include <algorithm>
+#include <array>
 #if defined(FMT_SUPPORT)
     #include <fmt/core.h>
 #endif    

@@ -4,7 +4,7 @@
     "clangtidy.buildPath": "${workspaceFolder}/build",
     "clangtidy.sourcePath": "${workspaceFolder}/src",
     "clangtidy.checksPath": "${workspaceFolder}/.vscode",
-    "C_Cpp.configurationWarnings": "Disabled",
+    "C_Cpp.configurationWarnings": "disabled",
     "files.associations": {
         "vector": "cpp",
         "cctype": "cpp",
@@ -79,6 +79,8 @@
         "compare": "cpp",
         "concepts": "cpp",
         "ranges": "cpp",
-        "stop_token": "cpp"
+        "stop_token": "cpp",
+        "numbers": "cpp",
+        "semaphore": "cpp"
     }
 }

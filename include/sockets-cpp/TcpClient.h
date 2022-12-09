@@ -52,7 +52,7 @@ public:
      * @param callback - pointer to the callback object which will handle notifications
      * @param options - optional socket options to configure SO_SNDBUF and SO_RCVBUF
      */
-    TcpClient(IClientSocket *callback, SocketOpt *options = nullptr);
+    explicit TcpClient(IClientSocket *callback, SocketOpt *options = nullptr);
 
     TcpClient(const TcpClient &) = delete;
     TcpClient(TcpClient &&) = delete;

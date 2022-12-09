@@ -1,5 +1,6 @@
 #include "TcpClient.h"
 #include "AddrLookup.h"
+#include <array>
 
 #if defined(FMT_SUPPORT)
     #include <fmt/core.h>

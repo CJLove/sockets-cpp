@@ -1,5 +1,6 @@
 #include "UdpSocket.h"
 #include "AddrLookup.h"
+#include <array>
 #include <arpa/inet.h>
 #include <cstring>
 #include <netinet/in.h>
@@ -20,7 +21,7 @@ constexpr size_t MAX_PACKET_SIZE = 65507;
 namespace sockets {
 
 UdpSocket::UdpSocket(IUdpSocket *callback, SocketOpt *options)
-    : m_sockaddr({}), m_callback(callback), m_thread(&UdpSocket::ReceiveTask, this) {
+    : m_sockaddr({}), m_callback(callback) {
     if (options != nullptr) {
         m_sockOptions = *options;
     }
@@ -110,6 +111,7 @@ SocketRet UdpSocket::startMcast(const char *mcastAddr, uint16_t port) {
         return ret;
     }
 
+    m_thread = std::thread(&UdpSocket::ReceiveTask, this);
     ret.m_success = true;
     return ret;
 }
@@ -174,6 +176,7 @@ SocketRet UdpSocket::startUnicast(uint16_t localPort) {
         return ret;
     }
 
+    m_thread = std::thread(&UdpSocket::ReceiveTask, this);
     ret.m_success = true;
     return ret;
 }
@@ -211,7 +214,8 @@ void UdpSocket::publishUdpMsg(const char *msg, size_t msgSize) {
 
 void UdpSocket::ReceiveTask() {
     constexpr int64_t USEC_DELAY = 500000;
-    while (!m_stop) {
+    m_stop = false;
+    while (!m_stop.load()) {
         if (m_fd != -1) {
             fd_set fds;
             struct timeval delay {
@@ -251,6 +255,7 @@ void UdpSocket::ReceiveTask() {
             }
         }
     }
+
 }
 
 SocketRet UdpSocket::sendMsg(const char *msg, size_t size) {
@@ -284,8 +289,8 @@ SocketRet UdpSocket::sendMsg(const char *msg, size_t size) {
 }
 
 SocketRet UdpSocket::finish() {
+    m_stop = true;
     if (m_thread.joinable()) {
-        m_stop = true;
         m_thread.join();
     }
     SocketRet ret;
