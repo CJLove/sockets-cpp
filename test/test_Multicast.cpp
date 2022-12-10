@@ -9,9 +9,11 @@ TEST(UdpSocket,multicast)
 {
     UdpTester test1;
     UdpTester test2;
+    uint16_t port = getPort();
+    std::cout << "Using port " << port << std::endl;
 
-    auto ret1 = test1.m_socket.startMcast("224.0.0.1",UDP_PORT1+8);
-    auto ret2 = test2.m_socket.startMcast("224.0.0.1",UDP_PORT1+8);
+    auto ret1 = test1.m_socket.startMcast("224.0.0.1",port);
+    auto ret2 = test2.m_socket.startMcast("224.0.0.1",port);
 
     EXPECT_TRUE(ret1.m_success);
     EXPECT_TRUE(ret2.m_success);
@@ -106,9 +108,12 @@ TEST(UdpSocket,multicastFail)
 {
     UdpTester test1;
     UdpTester test2;
+    uint16_t port1 = getPort();
+    uint16_t port2 = getPort();
+    std::cout << "Using port " << port1 << " & " << port2 << std::endl;
 
-    auto ret1 = test1.m_socket.startMcast("224.0.0.1",UDP_PORT1+11);
-    auto ret2 = test2.m_socket.startMcast("224.1.0.2",UDP_PORT2+12);
+    auto ret1 = test1.m_socket.startMcast("224.0.0.1",port1);
+    auto ret2 = test2.m_socket.startMcast("224.1.0.2",port2);
 
     EXPECT_TRUE(ret1.m_success);
     EXPECT_TRUE(ret2.m_success);

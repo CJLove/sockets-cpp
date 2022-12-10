@@ -12,6 +12,8 @@ constexpr uint16_t UDP_PORT2 = 5001;
 constexpr size_t UDP_MSG_SIZE = 6000;
 constexpr size_t UDP_MAX_MSG_SIZE = 60507;
 
+uint16_t getPort();
+
 class UdpTester: public sockets::IUdpSocket {
 public:
     UdpTester();

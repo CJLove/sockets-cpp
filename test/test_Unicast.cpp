@@ -2,15 +2,18 @@
 #include "UdpTester.h"
 #include "UdpSocket.h"
 #include <string>
-#include <random>
+#include <iostream>
 
 TEST(UdpSocket,unicast) 
 {
     UdpTester test1;
     UdpTester test2;
+    uint16_t port1 = getPort();
+    uint16_t port2 = getPort();
+    std::cout << "Using ports " << port1 << " & " << port2 << std::endl;
 
-    auto ret1 = test1.m_socket.startUnicast("127.0.0.1",UDP_PORT1,UDP_PORT2);
-    auto ret2 = test2.m_socket.startUnicast(UDP_PORT2);
+    auto ret1 = test1.m_socket.startUnicast("127.0.0.1",port1,port2);
+    auto ret2 = test2.m_socket.startUnicast(port2);
 
     EXPECT_TRUE(ret1.m_success);
     EXPECT_TRUE(ret2.m_success);
@@ -87,9 +90,12 @@ TEST(UdpSocket,unicastFail)
 {
     UdpTester test1;
     UdpTester test2;
+    uint16_t port1 = getPort();
+    uint16_t port2 = getPort();
+    std::cout << "Using ports " << port1 << " & " << port2 << std::endl;
 
-    auto ret1 = test1.m_socket.startUnicast("127.0.0.1",UDP_PORT1+6,UDP_PORT2+7);
-    auto ret2 = test2.m_socket.startUnicast(UDP_PORT1+7);
+    auto ret1 = test1.m_socket.startUnicast("127.0.0.1",port1,port2);
+    auto ret2 = test2.m_socket.startUnicast(port1);
 
     EXPECT_TRUE(ret1.m_success);
     EXPECT_TRUE(ret2.m_success);
