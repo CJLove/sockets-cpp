@@ -9,7 +9,8 @@ uint16_t getPort()
     constexpr uint16_t MULTIPLIER = 100;
     // Retrieve the pid of this process and reduce it to the range 0..255
     pid_t myPid = getpid();
-    uint16_t pidMod = static_cast<uint16_t>(myPid % 256);
+    
+    uint16_t pidMod = static_cast<uint16_t>(static_cast<uint32_t>(myPid) % 256);
 
     uint16_t port = BASE_PORT + (pidMod * MULTIPLIER) + idx;
     idx++;
