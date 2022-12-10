@@ -32,16 +32,16 @@ jobs:
     - task: gcc8_4_0
       file: sockets-cpp-git/ci/gcc840.yml
 
-# - name: sanitizers
-#   public: true
-#   plan:
-#   - get: sockets-cpp-git
-#     passed: [ build-matrix ]
-#     trigger: true
-#   - in_parallel:
-#     - task: asan
-#       file: sockets-cpp-git/ci/asan.yml
-#     - task: tsan
-#       file: sockets-cpp-git/ci/tsan.yml
+- name: sanitizers
+  public: true
+  plan:
+  - get: sockets-cpp-git
+    passed: [ build-matrix ]
+    trigger: true
+  - in_parallel:
+    - task: asan
+      file: sockets-cpp-git/ci/asan.yml
+    - task: tsan
+      file: sockets-cpp-git/ci/tsan.yml
 
         
