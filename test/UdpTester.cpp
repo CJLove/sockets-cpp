@@ -2,18 +2,28 @@
 #include <chrono>
 #include <unistd.h>
 
+// This method returns a port number within a range of 100 ports.
+// The base of the range is derived from the pid. Goal is to avoid 
+// port collisions between multiple unit test executables being run
+// in parallel under CI/CD
 uint16_t getPort()
 {
+    // Index within the range of ports used by this 
     static uint16_t idx = 0;
+
     constexpr uint16_t BASE_PORT = 5000;
     constexpr uint16_t MULTIPLIER = 100;
+    constexpr uint16_t PID_MODULO = 256;
+    constexpr uint16_t INCREMENT = 1;
     // Retrieve the pid of this process and reduce it to the range 0..255
     pid_t myPid = getpid();
-    
-    uint16_t pidMod = static_cast<uint16_t>(static_cast<uint32_t>(myPid) % 256);
 
-    uint16_t port = BASE_PORT + (pidMod * MULTIPLIER) + idx;
-    idx++;
+    uint16_t pidMod = static_cast<uint16_t>(static_cast<uint32_t>(myPid) % PID_MODULO); 
+
+    uint16_t port = static_cast<uint16_t>(BASE_PORT + idx + (pidMod * MULTIPLIER));
+
+    // Increment the index and handle wraparound
+    idx = static_cast<uint16_t>((idx + INCREMENT) % MULTIPLIER);
     return port;
 }
 
