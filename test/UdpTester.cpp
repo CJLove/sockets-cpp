@@ -31,7 +31,9 @@ void UdpTester::clear() {
 bool UdpTester::wait(uint32_t waitMs)
 {
     std::unique_lock<std::mutex> unique_lock(m_mutex);
-    if (m_ready) return true;
+    if (m_ready) {
+        return true;
+    }
     if (m_cond.wait_for(unique_lock, std::chrono::milliseconds(waitMs), [this] { return m_ready; })) {
         return true;
     }

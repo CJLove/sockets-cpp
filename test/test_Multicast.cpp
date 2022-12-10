@@ -10,8 +10,8 @@ TEST(UdpSocket,multicast)
     UdpTester test1;
     UdpTester test2;
 
-    auto ret1 = test1.m_socket.startMcast("224.0.0.1",UDP_PORT1);
-    auto ret2 = test2.m_socket.startMcast("224.0.0.1",UDP_PORT1);
+    auto ret1 = test1.m_socket.startMcast("224.0.0.1",UDP_PORT1+8);
+    auto ret2 = test2.m_socket.startMcast("224.0.0.1",UDP_PORT1+8);
 
     EXPECT_TRUE(ret1.m_success);
     EXPECT_TRUE(ret2.m_success);
@@ -39,8 +39,8 @@ TEST(UdpSocket,multicast6000)
     UdpTester test1;
     UdpTester test2;
 
-    auto ret1 = test1.m_socket.startMcast("224.0.0.1",UDP_PORT1);
-    auto ret2 = test2.m_socket.startMcast("224.0.0.1",UDP_PORT1);
+    auto ret1 = test1.m_socket.startMcast("224.0.0.1",UDP_PORT1+9);
+    auto ret2 = test2.m_socket.startMcast("224.0.0.1",UDP_PORT1+9);
 
     EXPECT_TRUE(ret1.m_success);
     EXPECT_TRUE(ret2.m_success);
@@ -72,8 +72,8 @@ TEST(UdpSocket,multicastMax)
     UdpTester test1;
     UdpTester test2;
 
-    auto ret1 = test1.m_socket.startMcast("224.0.0.1",UDP_PORT1);
-    auto ret2 = test2.m_socket.startMcast("224.0.0.1",UDP_PORT1);
+    auto ret1 = test1.m_socket.startMcast("224.0.0.1",UDP_PORT1+10);
+    auto ret2 = test2.m_socket.startMcast("224.0.0.1",UDP_PORT1+10);
 
     EXPECT_TRUE(ret1.m_success);
     EXPECT_TRUE(ret2.m_success);
@@ -105,8 +105,8 @@ TEST(UdpSocket,multicastFail)
     UdpTester test1;
     UdpTester test2;
 
-    auto ret1 = test1.m_socket.startMcast("224.0.0.1",UDP_PORT1);
-    auto ret2 = test2.m_socket.startMcast("224.1.0.2",UDP_PORT2);
+    auto ret1 = test1.m_socket.startMcast("224.0.0.1",UDP_PORT1+11);
+    auto ret2 = test2.m_socket.startMcast("224.1.0.2",UDP_PORT2+12);
 
     EXPECT_TRUE(ret1.m_success);
     EXPECT_TRUE(ret2.m_success);

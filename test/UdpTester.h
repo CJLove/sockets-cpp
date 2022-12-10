@@ -32,5 +32,5 @@ private:
     std::mutex m_mutex;
     std::condition_variable m_cond;
     std::vector<std::string> m_receiveData;
-    bool m_ready;
+    bool m_ready = false;
 };
