@@ -31,6 +31,7 @@ TEST(UdpSocket,unicast)
 
 }
 
+#if 0
 TEST(UdpSocket,unicast6000) 
 {
     UdpTester test1;
@@ -81,7 +82,7 @@ TEST(UdpSocket,unicast65507)
         EXPECT_EQ(testMessage,test2Data[0]);
     }
 }
-
+#endif
 TEST(UdpSocket,unicastFail) 
 {
     UdpTester test1;
