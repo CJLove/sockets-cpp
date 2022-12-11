@@ -8,11 +8,11 @@ public:
 
     virtual ~ClientApp() = default;
 
-    void onReceiveData(const unsigned char *data, size_t size) override;
+    void onReceiveData(const char *data, size_t size) override;
 
     void onDisconnect(const sockets::SocketRet &ret) override;
 
-    void sendMsg(const unsigned char *data, size_t len);
+    void sendMsg(const char *data, size_t len);
 
 private:
     sockets::TcpClient m_client;
@@ -30,15 +30,15 @@ ClientApp::ClientApp(const char *remoteIp, uint16_t port) : m_client(this) {
     }
 }
 
-void ClientApp::sendMsg(const unsigned char *data, size_t len) {
+void ClientApp::sendMsg(const char *data, size_t len) {
     auto ret = m_client.sendMsg(data, len);
     if (!ret.m_success) {
         std::cout << "Send Error: " << ret.m_msg << "\n";
     }
 }
 
-void ClientApp::onReceiveData(const unsigned char *data, size_t size) {
-    std::string str(reinterpret_cast<const char *>(data), size);
+void ClientApp::onReceiveData(const char *data, size_t size) {
+    std::string str(data, size);
 
     std::cout << "Received: " << str << "\n";
 }
@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
         if (data == "quit") {
             break;
         }
-        app->sendMsg(reinterpret_cast<const unsigned char *>(data.data()), data.size());
+        app->sendMsg(data.data(), data.size());
     }
 
     delete app;

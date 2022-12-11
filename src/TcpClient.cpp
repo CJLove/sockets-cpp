@@ -89,7 +89,7 @@ SocketRet TcpClient::connectTo(const char *remoteIp, uint16_t remotePort) {
     return ret;
 }
 
-SocketRet TcpClient::sendMsg(const unsigned char *msg, size_t size) const {
+SocketRet TcpClient::sendMsg(const char *msg, size_t size) const {
     SocketRet ret;
     ssize_t numBytesSent = send(m_sockfd, reinterpret_cast<const void *>(msg), size, 0);
     if (numBytesSent < 0) {  // send failed
@@ -110,7 +110,7 @@ SocketRet TcpClient::sendMsg(const unsigned char *msg, size_t size) const {
     return ret;
 }
 
-void TcpClient::publishServerMsg(const unsigned char *msg, size_t msgSize) {
+void TcpClient::publishServerMsg(const char *msg, size_t msgSize) {
     if (m_callback != nullptr) {
         m_callback->onReceiveData(msg, msgSize);
     }
@@ -135,7 +135,7 @@ void TcpClient::ReceiveTask() {
                 break;
             }
         } else if (FD_ISSET(m_sockfd, &fds)) {
-            std::array<unsigned char, MAX_PACKET_SIZE> msg;
+            std::array<char, MAX_PACKET_SIZE> msg;
             ssize_t numOfBytesReceived = recv(m_sockfd, msg.data(), MAX_PACKET_SIZE, 0);
             if (numOfBytesReceived < 1) {
                 SocketRet ret;

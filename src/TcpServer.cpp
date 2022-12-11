@@ -13,7 +13,7 @@ TcpServer::Client::Client(const char *ipAddr, int clientFd, uint16_t port)
     : m_ip(ipAddr), m_sockfd(clientFd), m_port(port), m_isConnected(true) {
 }
 
-SocketRet TcpServer::Client::sendMsg(const unsigned char *msg, size_t size) const {
+SocketRet TcpServer::Client::sendMsg(const char *msg, size_t size) const {
     SocketRet ret;
     if (m_sockfd != 0) {
         ssize_t numBytesSent = send(m_sockfd, reinterpret_cast<const void *>(msg), size, 0);
@@ -155,7 +155,7 @@ void TcpServer::serverTask() {
                 if (m_clients.count(fd) > 0) {
                     // data on client socket
                     Client &client = m_clients[fd];
-                    std::array<unsigned char, MAX_PACKET_SIZE> msg;
+                    std::array<char, MAX_PACKET_SIZE> msg;
                     ssize_t numOfBytesReceived = recv(fd, msg.data(), MAX_PACKET_SIZE, 0);
                     if (numOfBytesReceived < 1) {
                         client.m_isConnected = false;
@@ -202,7 +202,7 @@ bool TcpServer::deleteClient(ClientHandle &handle) {
     return false;
 }
 
-void TcpServer::publishClientMsg(const ClientHandle &client, const unsigned char *msg, size_t msgSize) {
+void TcpServer::publishClientMsg(const ClientHandle &client, const char *msg, size_t msgSize) {
     if (m_callback != nullptr) {
         m_callback->onReceiveClientData(client, msg, msgSize);
     }
@@ -226,7 +226,7 @@ void TcpServer::publishClientConnect(const ClientHandle &client) {
     }
 }
 
-SocketRet TcpServer::sendBcast(const unsigned char *msg, size_t size) {
+SocketRet TcpServer::sendBcast(const char *msg, size_t size) {
     SocketRet ret;
     ret.m_success = true;
     for (auto &client : m_clients) {
@@ -240,7 +240,7 @@ SocketRet TcpServer::sendBcast(const unsigned char *msg, size_t size) {
     return ret;
 }
 
-SocketRet TcpServer::sendClientMessage(ClientHandle &clientId, const unsigned char *msg, size_t size) {
+SocketRet TcpServer::sendClientMessage(ClientHandle &clientId, const char *msg, size_t size) {
     SocketRet ret;
     if (m_clients.count(clientId) > 0) {
         Client &client = m_clients[clientId];

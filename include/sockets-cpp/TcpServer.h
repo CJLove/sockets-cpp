@@ -48,7 +48,7 @@ public:
      * @param data - pointer to received data
      * @param size - length of received data
      */
-    virtual void onReceiveClientData(const ClientHandle &client, const unsigned char *data, size_t size) = 0;
+    virtual void onReceiveClientData(const ClientHandle &client, const char *data, size_t size) = 0;
 };
 
 /**
@@ -100,7 +100,7 @@ public:
      * @param size - length of the message data
      * @return SocketRet - indication that the message was sent to all clients
      */
-    SocketRet sendBcast(const unsigned char *msg, size_t size);
+    SocketRet sendBcast(const char *msg, size_t size);
 
     /**
      * @brief Send a message to a specific connected client
@@ -110,7 +110,7 @@ public:
      * @param size - length of the message data
      * @return SocketRet - indication that the message was sent to the client
      */
-    SocketRet sendClientMessage(ClientHandle &client, const unsigned char *msg, size_t size);
+    SocketRet sendClientMessage(ClientHandle &client, const char *msg, size_t size);
 
     /**
      * @brief Shut down the TCP server
@@ -191,7 +191,7 @@ private:
          * @param size - length of the message data
          * @return SocketRet - indication of whether the message was sent successfully
          */
-        SocketRet sendMsg(const unsigned char *msg, size_t size) const;
+        SocketRet sendMsg(const char *msg, size_t size) const;
     };
 
     /**
@@ -201,7 +201,7 @@ private:
      * @param msg - pointer to the message data
      * @param msgSize - length of the message data
      */
-    void publishClientMsg(const ClientHandle &client, const unsigned char *msg, size_t msgSize);
+    void publishClientMsg(const ClientHandle &client, const char *msg, size_t msgSize);
 
     /**
      * @brief Publish notification that a TCP client has disconnected

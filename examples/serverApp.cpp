@@ -11,11 +11,11 @@ public:
 
     void onClientConnect(const sockets::ClientHandle &client) override;
 
-    void onReceiveClientData(const sockets::ClientHandle &client, const unsigned char *data, size_t size) override;
+    void onReceiveClientData(const sockets::ClientHandle &client, const char *data, size_t size) override;
 
     void onClientDisconnect(const sockets::ClientHandle &client, const sockets::SocketRet &ret) override;
 
-    void sendMsg(int idx, const unsigned char *data, size_t len);
+    void sendMsg(int idx, const char *data, size_t len);
 
 private:
     sockets::TcpServer m_server;
@@ -32,7 +32,7 @@ ServerApp::ServerApp(uint16_t port) : m_server(this) {
     }
 }
 
-void ServerApp::sendMsg(int idx, const unsigned char *data, size_t len) {
+void ServerApp::sendMsg(int idx, const char *data, size_t len) {
     if (idx == 0) {
         auto ret = m_server.sendBcast(data, len);
         if (!ret.m_success) {
@@ -48,7 +48,7 @@ void ServerApp::sendMsg(int idx, const unsigned char *data, size_t len) {
     }
 }
 
-void ServerApp::onReceiveClientData(const sockets::ClientHandle &client, const unsigned char *data, size_t size) {
+void ServerApp::onReceiveClientData(const sockets::ClientHandle &client, const char *data, size_t size) {
     std::string str(reinterpret_cast<const char *>(data), size);
     std::cout << "Client " << client << " Rcvd: " << str << "\n";
 }
@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
             } catch (...) { continue; }
         }
 
-        app->sendMsg(idx, reinterpret_cast<const unsigned char *>(data.substr(2, data.size() - 2).c_str()), data.size() - 2);
+        app->sendMsg(idx, data.substr(2, data.size() - 2).c_str(), data.size() - 2);
     }
 
     delete app;

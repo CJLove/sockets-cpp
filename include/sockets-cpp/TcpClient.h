@@ -30,7 +30,7 @@ public:
      * @param data - pointer to received data
      * @param size - length of received data
      */
-    virtual void onReceiveData(const unsigned char *data, size_t size) = 0;
+    virtual void onReceiveData(const char *data, size_t size) = 0;
 
     /**
      * @brief Receive notification that TCP server connection has disconnected
@@ -81,7 +81,7 @@ public:
      * @param size - length of the message data
      * @return SocketRet - indication of whether the message was sent successfully
      */
-    SocketRet sendMsg(const unsigned char *msg, size_t size) const;
+    SocketRet sendMsg(const char *msg, size_t size) const;
 
     /**
      * @brief Shut down the TCP client
@@ -97,7 +97,7 @@ private:
      * @param msg - pointer to the message data
      * @param msgSize - length of the message data
      */
-    void publishServerMsg(const unsigned char *msg, size_t msgSize);
+    void publishServerMsg(const char *msg, size_t msgSize);
 
     /**
      * @brief Publish notification of disconnection
