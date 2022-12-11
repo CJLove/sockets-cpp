@@ -21,8 +21,8 @@ include_directories(
 set ( socketTests_SRC 
     UdpTester.cpp
     test_AddrLookup.cpp
-    test_Unicast.cpp
-    test_Multicast.cpp
+#    test_Unicast.cpp
+#    test_Multicast.cpp
 )
 
 add_executable ( socketTests ${socketTests_SRC} )
