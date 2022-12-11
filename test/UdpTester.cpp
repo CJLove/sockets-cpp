@@ -18,9 +18,9 @@ uint16_t getPort()
     // Retrieve the pid of this process and reduce it to the range 0..255
     pid_t myPid = getpid();
 
-    uint16_t pidMod = static_cast<uint16_t>(static_cast<uint32_t>(myPid) % PID_MODULO); 
+    auto pidMod = static_cast<uint16_t>(static_cast<uint32_t>(myPid) % PID_MODULO); 
 
-    uint16_t port = static_cast<uint16_t>(BASE_PORT + idx + (pidMod * MULTIPLIER));
+    auto port = static_cast<uint16_t>(BASE_PORT + idx + (pidMod * MULTIPLIER));
 
     // Increment the index and handle wraparound
     idx = static_cast<uint16_t>((idx + INCREMENT) % MULTIPLIER);
@@ -28,8 +28,7 @@ uint16_t getPort()
 }
 
 UdpTester::UdpTester():
-    m_socket(this),
-    m_ready(false)
+    m_socket(this)
 {
 
 }
