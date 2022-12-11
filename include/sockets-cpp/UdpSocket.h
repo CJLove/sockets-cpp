@@ -1,10 +1,10 @@
 #pragma once
 #include "SocketCommon.h"
+#include <atomic>
 #include <cstdint>
 #include <netinet/in.h>
 #include <string>
 #include <sys/socket.h>
-#include <atomic>
 #include <thread>
 
 namespace sockets {
@@ -23,9 +23,7 @@ public:
      * @param size - length of received data
      */
     virtual void onReceiveData(const char *data, size_t size) = 0;
-
 };
-
 
 /**
  * @brief The UdpSocket class represents a UDP unicast or multicast socket connection
@@ -76,12 +74,12 @@ public:
 
     /**
      * @brief Start a UDP unicast socket by binding to the server address
-     * 
+     *
      * @param localPort - local port to listen on
      * @return SocketRet - Indication that unicast setup was successful
      */
     SocketRet startUnicast(uint16_t localPort);
-    
+
     /**
      * @brief Send a message over UDP
      *
@@ -141,7 +139,6 @@ private:
      * @brief Socket options for SO_SNDBUF and SO_RCVBUF
      */
     SocketOpt m_sockOptions;
-
 };
 
 }  // Namespace sockets

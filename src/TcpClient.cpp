@@ -3,7 +3,7 @@
 #include <array>
 
 #if defined(FMT_SUPPORT)
-    #include <fmt/core.h>
+#include <fmt/core.h>
 #endif
 
 constexpr size_t MAX_PACKET_SIZE = 65536;
@@ -28,15 +28,16 @@ SocketRet TcpClient::connectTo(const char *remoteIp, uint16_t remotePort) {
     if (m_sockfd == -1) {  // socket failed
         ret.m_success = false;
 #if defined(FMT_SUPPORT)
-        ret.m_msg = fmt::format("Error: Failed to create socket: errno {}",errno);
-#else        
+        ret.m_msg = fmt::format("Error: Failed to create socket: errno {}", errno);
+#else
         ret.m_msg = "Error: failed to create socket";
 #endif
         return ret;
     }
 
     // set TX and RX buffer sizes
-    if (setsockopt(m_sockfd, SOL_SOCKET, SO_RCVBUF, reinterpret_cast<char*>(&m_sockOptions.m_rxBufSize), sizeof(m_sockOptions.m_rxBufSize)) < 0) {
+    if (setsockopt(m_sockfd, SOL_SOCKET, SO_RCVBUF, reinterpret_cast<char *>(&m_sockOptions.m_rxBufSize),
+            sizeof(m_sockOptions.m_rxBufSize)) < 0) {
         ret.m_success = false;
 #if defined(FMT_SUPPORT)
         ret.m_msg = fmt::format("Error: setsockopt(SO_RCVBUF) failed: errno {}", errno);
@@ -46,7 +47,8 @@ SocketRet TcpClient::connectTo(const char *remoteIp, uint16_t remotePort) {
         return ret;
     }
 
-    if (setsockopt(m_sockfd, SOL_SOCKET, SO_SNDBUF, reinterpret_cast<char*>(&m_sockOptions.m_txBufSize), sizeof(m_sockOptions.m_txBufSize)) < 0) {
+    if (setsockopt(m_sockfd, SOL_SOCKET, SO_SNDBUF, reinterpret_cast<char *>(&m_sockOptions.m_txBufSize),
+            sizeof(m_sockOptions.m_txBufSize)) < 0) {
         ret.m_success = false;
 #if defined(FMT_SUPPORT)
         ret.m_msg = fmt::format("Error: setsockopt(SO_SNDBUF) failed: errno {}", errno);
@@ -54,20 +56,20 @@ SocketRet TcpClient::connectTo(const char *remoteIp, uint16_t remotePort) {
         ret.m_msg = "setsockopt(SO_REUSEADDR) failed";
 #endif
         return ret;
-    }      
+    }
 
     int inetSuccess = inet_aton(remoteIp, &m_server.sin_addr);
 
-    if (inetSuccess == 0) {  // inet_addr failed to parse address
-        // if hostname is not in IP strings and dots format, try resolve it
-        if (lookupHost(remoteIp,m_server.sin_addr.s_addr) != 0) {
+    //    if (inetSuccess == 0) {  // inet_addr failed to parse address
+    // if hostname is not in IP strings and dots format, try resolve it
+    if (lookupHost(remoteIp, m_server.sin_addr.s_addr) != 0) {
 #if defined(FMT_SUPPORT)
-            ret.m_msg = fmt::format("Failed to resolve hostname {}",remoteIp);
+        ret.m_msg = fmt::format("Failed to resolve hostname {}", remoteIp);
 #else
-            ret.m_msg = "Failed to resolve hostname";
+        ret.m_msg = "Failed to resolve hostname";
 #endif
-            return ret;
-        }
+        return ret;
+        //        }
     }
     m_server.sin_family = AF_INET;
     m_server.sin_port = htons(remotePort);
@@ -78,10 +80,10 @@ SocketRet TcpClient::connectTo(const char *remoteIp, uint16_t remotePort) {
         m_sockfd = 0;
         ret.m_success = false;
 #if defined(FMT_SUPPORT)
-        ret.m_msg = fmt::format("Error: connect() failed errno {}",errno);
+        ret.m_msg = fmt::format("Error: connect() failed errno {}", errno);
 #else
         ret.m_msg = "Error: connect() failed";
-#endif                
+#endif
         return ret;
     }
     m_thread = std::thread(&TcpClient::ReceiveTask, this);
@@ -94,16 +96,16 @@ SocketRet TcpClient::sendMsg(const char *msg, size_t size) const {
     ssize_t numBytesSent = send(m_sockfd, reinterpret_cast<const void *>(msg), size, 0);
     if (numBytesSent < 0) {  // send failed
         ret.m_success = false;
-#if defined(FMT_SUPPORT)        
-        ret.m_msg = fmt::format("Error: send() failed errno {}",errno);
+#if defined(FMT_SUPPORT)
+        ret.m_msg = fmt::format("Error: send() failed errno {}", errno);
 #else
         ret.m_msg = "Error: send() failed";
-#endif                
+#endif
         return ret;
     }
     if (static_cast<size_t>(numBytesSent) < size) {  // not all bytes were sent
         ret.m_success = false;
-        ret.m_msg = fmt::format("Error: Only {} bytes out of {} sent to client",numBytesSent,size);
+        ret.m_msg = fmt::format("Error: Only {} bytes out of {} sent to client", numBytesSent, size);
         return ret;
     }
     ret.m_success = true;
@@ -126,7 +128,9 @@ void TcpClient::ReceiveTask() {
     constexpr int64_t USEC_DELAY = 500000;
     while (!m_stop.load()) {
         fd_set fds;
-        struct timeval delay { 0, USEC_DELAY };
+        struct timeval delay {
+            0, USEC_DELAY
+        };
         FD_ZERO(&fds);
         FD_SET(m_sockfd, &fds);
         int selectRet = select(m_sockfd + 1, &fds, nullptr, nullptr, &delay);
@@ -142,21 +146,21 @@ void TcpClient::ReceiveTask() {
                 ret.m_success = false;
                 m_stop = true;
                 if (numOfBytesReceived == 0) {  // server closed connection
-#if defined(FMT_SUPPORT)                
+#if defined(FMT_SUPPORT)
                     ret.m_msg = fmt::format("Server closed connection");
 #else
                     ret.m_msg = "Server closed connection";
-#endif                                        
+#endif
                 } else {
-#if defined(FMT_SUPPORT)                    
-                    ret.m_msg = fmt::format("Error: recv() failed errno {}",errno);
+#if defined(FMT_SUPPORT)
+                    ret.m_msg = fmt::format("Error: recv() failed errno {}", errno);
 #else
                     ret.m_msg = "Error: recv() failed";
-#endif                                        
+#endif
                 }
                 publishDisconnected(ret);
                 break;
-            } 
+            }
             publishServerMsg(msg.data(), static_cast<size_t>(numOfBytesReceived));
         }
     }
@@ -171,10 +175,10 @@ SocketRet TcpClient::finish() {
     if (close(m_sockfd) == -1) {  // close failed
         ret.m_success = false;
 #if defined(FMT_SUPPORT)
-        ret.m_msg = fmt::format("Error: close() failed errno {}",errno);
-#else                
+        ret.m_msg = fmt::format("Error: close() failed errno {}", errno);
+#else
         ret.m_msg = "Error: close() failed";
-#endif        
+#endif
         return ret;
     }
     ret.m_success = true;

@@ -1,15 +1,15 @@
 #pragma once
 
 #include "SocketCommon.h"
-#include <atomic>
 #include <arpa/inet.h>
+#include <atomic>
 #include <cerrno>
-#include <iostream>
-#include <netdb.h>
-#include <netinet/in.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
+#include <netdb.h>
+#include <netinet/in.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <thread>
@@ -63,8 +63,8 @@ public:
      */
     ~TcpClient();
 
-    TcpClient& operator=(const TcpClient&) = delete;
-    TcpClient& operator=(TcpClient&&) = delete;
+    TcpClient &operator=(const TcpClient &) = delete;
+    TcpClient &operator=(TcpClient &&) = delete;
 
     /**
      * @brief Establish the TCP client connection

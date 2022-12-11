@@ -8,10 +8,16 @@ TEST(AddrLookup, localhost)
     EXPECT_EQ(0, sockets::lookupHost("localhost",addr));
 }
 
-TEST(AddrLookup, ipv4addr)
+TEST(AddrLookup, ipv4loopbackaddr)
 {
     in_addr_t addr {};
     EXPECT_EQ(0, sockets::lookupHost("127.0.0.1",addr));
+}
+
+TEST(AddrLookup, ipv4addr)
+{
+    in_addr_t addr {};
+    EXPECT_EQ(0, sockets::lookupHost("192.168.1.129",addr));
 }
 
 TEST(AddrLookup, ipv6addr)

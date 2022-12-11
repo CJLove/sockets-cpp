@@ -1,15 +1,15 @@
 #pragma once
 #include "SocketCommon.h"
-#include <atomic>
 #include <arpa/inet.h>
-#include <cstring>
+#include <atomic>
 #include <cerrno>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <functional>
 #include <iostream>
 #include <mutex>
 #include <netinet/in.h>
-#include <cstdio>
-#include <cstdlib>
 #include <string>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -122,14 +122,14 @@ public:
     SocketRet finish();
 
     /**
-     * @brief Get the Client Info object
-     * 
-     * @param clientId 
-     * @param ip 
-     * @param port 
-     * @param connected 
-     * @return true 
-     * @return false 
+     * @brief Get current info for a client
+     *
+     * @param clientId - handle to this client connection
+     * @param ip - Client's IP address
+     * @param port - Client's port number
+     * @param connected - indicates client is connected
+     * @return true - clientId is valid and information was returned
+     * @return false - clientId is invalid
      */
     bool getClientInfo(ClientHandle clientId, std::string &ip, uint16_t &port, bool &connected);
 
@@ -266,7 +266,7 @@ private:
     /**
      * @brief Socket options for SO_SNDBUF and SO_RCVBUF
      */
-    SocketOpt m_sockOptions;  
+    SocketOpt m_sockOptions;
 };
 
 }  // Namespace sockets

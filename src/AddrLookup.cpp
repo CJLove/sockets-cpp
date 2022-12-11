@@ -1,6 +1,6 @@
 #include <arpa/inet.h>
-#include <netdb.h>
 #include <cstring>
+#include <netdb.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 namespace sockets {
@@ -32,4 +32,4 @@ int lookupHost(const char *host, in_addr_t &addr) {
     return errcode;
 }
 
-}   // namespace sockets
+}  // namespace sockets

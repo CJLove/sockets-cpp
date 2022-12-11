@@ -7,7 +7,7 @@ public:
     // TCP Server
     explicit ServerApp(uint16_t port);
 
-    virtual ~ServerApp() = default;
+    virtual ~ServerApp();
 
     void onClientConnect(const sockets::ClientHandle &client) override;
 
@@ -30,6 +30,14 @@ ServerApp::ServerApp(uint16_t port) : m_server(this) {
         std::cout << "Server started on port " << port << "\n";
     } else {
         std::cout << "Error: " << ret.m_msg << "\n";
+    }
+}
+
+ServerApp::~ServerApp()
+{
+    {
+        std::lock_guard<std::mutex> guard(m_mutex);
+        m_clients.clear();
     }
 }
 
@@ -61,15 +69,19 @@ void ServerApp::onClientConnect(const sockets::ClientHandle &client) {
     bool connected;
     if (m_server.getClientInfo(client,ip,port,connected)) {
         std::cout << "Client " << client << " connection from " << ip << ":" << port << std::endl;
-        std::lock_guard<std::mutex> guard(m_mutex);
-        m_clients.insert(client);
+        {
+            std::lock_guard<std::mutex> guard(m_mutex);
+            m_clients.insert(client);
+        }
     }
 }
 
 void ServerApp::onClientDisconnect(const sockets::ClientHandle &client, const sockets::SocketRet &ret) {
     std::cout << "Client " << client << " Disconnect: " << ret.m_msg << "\n";
-    std::lock_guard<std::mutex> guard(m_mutex);
-    m_clients.erase(client);
+    {
+        std::lock_guard<std::mutex> guard(m_mutex);
+        m_clients.erase(client);
+    }
 }
 
 void usage() {

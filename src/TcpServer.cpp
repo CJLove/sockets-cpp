@@ -143,63 +143,59 @@ void TcpServer::serverTask() {
     constexpr int64_t USEC_DELAY = 500000;
     std::array<char, MAX_PACKET_SIZE> msg;
 
-    try {
-        while (!m_stop.load()) {
-            struct timeval delay {
-                0, USEC_DELAY
-            };
-            fd_set read_set = m_fds;
-            int maxfds = findMaxFd();
-            int selectRet = select(maxfds, &read_set, nullptr, nullptr, &delay);
-            if (selectRet <= 0) {
-                // select() failed or timed out, so retry after a shutdown check
-                continue;
-            }
-            for (int fd = 0; fd < maxfds; fd++) {
-                if (FD_ISSET(fd, &read_set)) {
-                    Client *client = nullptr;
-                    {
-                        std::lock_guard<std::mutex> guard(m_mutex);
-                        if (m_clients.count(fd) > 0) {
-                            client = &m_clients[fd];
-                        }
+    while (!m_stop.load()) {
+        struct timeval delay {
+            0, USEC_DELAY
+        };
+        fd_set read_set = m_fds;
+        int maxfds = findMaxFd();
+        int selectRet = select(maxfds, &read_set, nullptr, nullptr, &delay);
+        if (selectRet <= 0) {
+            // select() failed or timed out, so retry after a shutdown check
+            continue;
+        }
+        for (int fd = 0; fd < maxfds; fd++) {
+            if (FD_ISSET(fd, &read_set)) {
+                Client *client = nullptr;
+                {
+                    std::lock_guard<std::mutex> guard(m_mutex);
+                    if (m_clients.count(fd) > 0) {
+                        client = &m_clients[fd];
                     }
-                    if (client != nullptr) {
-                        // data on client socket
-                        ssize_t numOfBytesReceived = recv(fd, msg.data(), MAX_PACKET_SIZE, 0);
-                        if (numOfBytesReceived < 1) {
-                            client->m_isConnected = false;
-                            if (numOfBytesReceived == 0) {  // client closed connection
-                                deleteClient(fd);
-                                publishDisconnected(fd);
-                            }
-                        } else {
-                            publishClientMsg(fd, msg.data(), static_cast<size_t>(numOfBytesReceived));
+                }
+                if (client != nullptr) {
+                    // data on client socket
+                    ssize_t numOfBytesReceived = recv(fd, msg.data(), MAX_PACKET_SIZE, 0);
+                    if (numOfBytesReceived < 1) {
+                        client->m_isConnected = false;
+                        if (numOfBytesReceived == 0) {  // client closed connection
+                            deleteClient(fd);
+                            publishDisconnected(fd);
                         }
                     } else {
-                        // data on accept socket
-                        socklen_t sosize = sizeof(m_clientAddress);
-                        int clientfd = accept(fd, reinterpret_cast<struct sockaddr *>(&m_clientAddress), &sosize);
-                        if (clientfd == -1) {
-                            // accept() failed
-                            // std::cout << "accept returned " << strerror(errno) << "\n";
-                        } else {
-                            std::array<char, INET_ADDRSTRLEN> addr;
-                            inet_ntop(AF_INET, &m_clientAddress.sin_addr, addr.data(), INET_ADDRSTRLEN);
-                            {
-                                std::lock_guard<std::mutex> guard(m_mutex);
-                                m_clients.emplace(clientfd,
-                                    Client(addr.data(), clientfd, static_cast<uint16_t>(ntohs(m_clientAddress.sin_port))));
-                            }
-                            FD_SET(clientfd, &m_fds);
-                            publishClientConnect(clientfd);
+                        publishClientMsg(fd, msg.data(), static_cast<size_t>(numOfBytesReceived));
+                    }
+                } else {
+                    // data on accept socket
+                    socklen_t sosize = sizeof(m_clientAddress);
+                    int clientfd = accept(fd, reinterpret_cast<struct sockaddr *>(&m_clientAddress), &sosize);
+                    if (clientfd == -1) {
+                        // accept() failed
+                        // std::cout << "accept returned " << strerror(errno) << "\n";
+                    } else {
+                        std::array<char, INET_ADDRSTRLEN> addr;
+                        inet_ntop(AF_INET, &m_clientAddress.sin_addr, addr.data(), INET_ADDRSTRLEN);
+                        {
+                            std::lock_guard<std::mutex> guard(m_mutex);
+                            m_clients.emplace(clientfd,
+                                Client(addr.data(), clientfd, static_cast<uint16_t>(ntohs(m_clientAddress.sin_port))));
                         }
+                        FD_SET(clientfd, &m_fds);
+                        publishClientConnect(clientfd);
                     }
                 }
             }
         }
-    } catch (std::exception &e) {
-        std::cout << "Caught " << e.what() << std::endl;
     }
 }
 

@@ -1,10 +1,10 @@
 #include "UdpSocket.h"
 #include "AddrLookup.h"
-#include <array>
 #include <arpa/inet.h>
+#include <array>
 #include <cstring>
-#include <netinet/in.h>
 #include <netdb.h>
+#include <netinet/in.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -14,14 +14,13 @@
 
 /**
  * @brief Max UDP datagram size for UDP protocol
- * 
+ *
  */
 constexpr size_t MAX_PACKET_SIZE = 65507;
 
 namespace sockets {
 
-UdpSocket::UdpSocket(IUdpSocket *callback, SocketOpt *options)
-    : m_sockaddr({}), m_callback(callback) {
+UdpSocket::UdpSocket(IUdpSocket *callback, SocketOpt *options) : m_sockaddr({}), m_callback(callback) {
     if (options != nullptr) {
         m_sockOptions = *options;
     }
@@ -55,7 +54,8 @@ SocketRet UdpSocket::startMcast(const char *mcastAddr, uint16_t port) {
         return ret;
     }
     // Set TX and RX buffer sizes
-    if (setsockopt(m_fd, SOL_SOCKET, SO_RCVBUF, reinterpret_cast<char*>(&m_sockOptions.m_rxBufSize), sizeof(m_sockOptions.m_rxBufSize)) < 0) {
+    if (setsockopt(m_fd, SOL_SOCKET, SO_RCVBUF, reinterpret_cast<char *>(&m_sockOptions.m_rxBufSize),
+            sizeof(m_sockOptions.m_rxBufSize)) < 0) {
         ret.m_success = false;
 #if defined(FMT_SUPPORT)
         ret.m_msg = fmt::format("Error: setsockopt(SO_RCVBUF) failed: errno {}", errno);
@@ -65,7 +65,8 @@ SocketRet UdpSocket::startMcast(const char *mcastAddr, uint16_t port) {
         return ret;
     }
 
-    if (setsockopt(m_fd, SOL_SOCKET, SO_SNDBUF, reinterpret_cast<char*>(&m_sockOptions.m_txBufSize), sizeof(m_sockOptions.m_txBufSize)) < 0) {
+    if (setsockopt(m_fd, SOL_SOCKET, SO_SNDBUF, reinterpret_cast<char *>(&m_sockOptions.m_txBufSize),
+            sizeof(m_sockOptions.m_txBufSize)) < 0) {
         ret.m_success = false;
 #if defined(FMT_SUPPORT)
         ret.m_msg = fmt::format("Error: setsockopt(SO_SNDBUF) failed: errno {}", errno);
@@ -73,7 +74,7 @@ SocketRet UdpSocket::startMcast(const char *mcastAddr, uint16_t port) {
         ret.m_msg = "setsockopt(SO_SNDBUF) failed";
 #endif
         return ret;
-    }       
+    }
 
     sockaddr_in localAddr = {};
     localAddr.sin_family = AF_INET;
@@ -141,7 +142,8 @@ SocketRet UdpSocket::startUnicast(uint16_t localPort) {
     }
 
     // Set TX and RX buffer sizes
-    if (setsockopt(m_fd, SOL_SOCKET, SO_RCVBUF, reinterpret_cast<char*>(&m_sockOptions.m_rxBufSize), sizeof(m_sockOptions.m_rxBufSize)) < 0) {
+    if (setsockopt(m_fd, SOL_SOCKET, SO_RCVBUF, reinterpret_cast<char *>(&m_sockOptions.m_rxBufSize),
+            sizeof(m_sockOptions.m_rxBufSize)) < 0) {
         ret.m_success = false;
 #if defined(FMT_SUPPORT)
         ret.m_msg = fmt::format("Error: setsockopt(SO_RCVBUF) failed: errno {}", errno);
@@ -151,7 +153,8 @@ SocketRet UdpSocket::startUnicast(uint16_t localPort) {
         return ret;
     }
 
-    if (setsockopt(m_fd, SOL_SOCKET, SO_SNDBUF, reinterpret_cast<char*>(&m_sockOptions.m_txBufSize), sizeof(m_sockOptions.m_txBufSize)) < 0) {
+    if (setsockopt(m_fd, SOL_SOCKET, SO_SNDBUF, reinterpret_cast<char *>(&m_sockOptions.m_txBufSize),
+            sizeof(m_sockOptions.m_txBufSize)) < 0) {
         ret.m_success = false;
 #if defined(FMT_SUPPORT)
         ret.m_msg = fmt::format("Error: setsockopt(SO_SNDBUF) failed: errno {}", errno);
@@ -159,7 +162,7 @@ SocketRet UdpSocket::startUnicast(uint16_t localPort) {
         ret.m_msg = "setsockopt(SO_SNDBUF) failed";
 #endif
         return ret;
-    }      
+    }
 
     sockaddr_in localAddr {};
     localAddr.sin_family = AF_INET;
@@ -187,18 +190,14 @@ SocketRet UdpSocket::startUnicast(const char *remoteAddr, uint16_t localPort, ui
     // store the remoteaddress for use by sendto()
     memset(&m_sockaddr, 0, sizeof(sockaddr));
     m_sockaddr.sin_family = AF_INET;
-    int inetSuccess = inet_aton(remoteAddr, &m_sockaddr.sin_addr);
-    if (inetSuccess == 0) {// inet_addr failed to parse address
-        if (lookupHost(remoteAddr,m_sockaddr.sin_addr.s_addr) != 0) {
+    if (lookupHost(remoteAddr, m_sockaddr.sin_addr.s_addr) != 0) {
 #if defined(FMT_SUPPORT)
-            ret.m_msg = fmt::format("Failed to resolve hostname {}",remoteAddr);
+        ret.m_msg = fmt::format("Failed to resolve hostname {}", remoteAddr);
 #else
-            ret.m_msg = "Failed to resolve hostname";
+        ret.m_msg = "Failed to resolve hostname";
 #endif
-            return ret;
-        }
+        return ret;
     }
-
 
     m_sockaddr.sin_port = htons(port);
 
@@ -255,14 +254,14 @@ void UdpSocket::ReceiveTask() {
             }
         }
     }
-
 }
 
 SocketRet UdpSocket::sendMsg(const char *msg, size_t size) {
     SocketRet ret;
     // If destination addr/port specified
     if (m_sockaddr.sin_port != 0) {
-        ssize_t numBytesSent = sendto(m_fd, &msg[0], size, 0, reinterpret_cast<struct sockaddr *>(&m_sockaddr), sizeof(m_sockaddr));
+        ssize_t numBytesSent =
+            sendto(m_fd, &msg[0], size, 0, reinterpret_cast<struct sockaddr *>(&m_sockaddr), sizeof(m_sockaddr));
         if (numBytesSent < 0) {  // send failed
             ret.m_success = false;
 #if defined(FMT_SUPPORT)
