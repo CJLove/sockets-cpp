@@ -21,6 +21,7 @@ private:
     sockets::TcpServer m_server;
     int m_clientIdx = 0;
     std::set<int> m_clients;
+    std::mutex m_mutex;
 };
 
 ServerApp::ServerApp(uint16_t port) : m_server(this) {
@@ -33,6 +34,7 @@ ServerApp::ServerApp(uint16_t port) : m_server(this) {
 }
 
 void ServerApp::sendMsg(int idx, const char *data, size_t len) {
+    std::lock_guard<std::mutex> guard(m_mutex);
     if (idx == 0) {
         auto ret = m_server.sendBcast(data, len);
         if (!ret.m_success) {
@@ -54,13 +56,19 @@ void ServerApp::onReceiveClientData(const sockets::ClientHandle &client, const c
 }
 
 void ServerApp::onClientConnect(const sockets::ClientHandle &client) {
-    std::cout << "Client " << client << " connection from " << m_server.getIp(client) << ":" << m_server.getPort(client)
-              << "\n";
-    m_clients.insert(client);
+    std::string ip;
+    uint16_t port;
+    bool connected;
+    if (m_server.getClientInfo(client,ip,port,connected)) {
+        std::cout << "Client " << client << " connection from " << ip << ":" << port << std::endl;
+        std::lock_guard<std::mutex> guard(m_mutex);
+        m_clients.insert(client);
+    }
 }
 
 void ServerApp::onClientDisconnect(const sockets::ClientHandle &client, const sockets::SocketRet &ret) {
     std::cout << "Client " << client << " Disconnect: " << ret.m_msg << "\n";
+    std::lock_guard<std::mutex> guard(m_mutex);
     m_clients.erase(client);
 }
 

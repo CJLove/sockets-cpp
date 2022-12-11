@@ -1,10 +1,12 @@
 #pragma once
 #include "SocketCommon.h"
+#include <atomic>
 #include <arpa/inet.h>
 #include <cstring>
 #include <cerrno>
 #include <functional>
 #include <iostream>
+#include <mutex>
 #include <netinet/in.h>
 #include <cstdio>
 #include <cstdlib>
@@ -120,29 +122,16 @@ public:
     SocketRet finish();
 
     /**
-     * @brief Get the IP address for a specific client
-     *
-     * @param clientId - handle of the TCP client
-     * @return std::string - IP address
+     * @brief Get the Client Info object
+     * 
+     * @param clientId 
+     * @param ip 
+     * @param port 
+     * @param connected 
+     * @return true 
+     * @return false 
      */
-    std::string getIp(ClientHandle clientId) const;
-
-    /**
-     * @brief Get the port number for a specific client
-     *
-     * @param clientId - handle of the TCP client
-     * @return uint16_t - port number
-     */
-    uint16_t getPort(ClientHandle clientId) const;
-
-    /**
-     * @brief Return whether a specific client is connected or not
-     *
-     * @param clientId - handle of the TCP client
-     * @return true - client is connected
-     * @return false - client is not connected
-     */
-    bool isConnected(ClientHandle clientId) const;
+    bool getClientInfo(ClientHandle clientId, std::string &ip, uint16_t &port, bool &connected);
 
 private:
     /**
@@ -252,12 +241,17 @@ private:
     /**
      * @brief Flag to stop the server thread
      */
-    bool m_stop = false;
+    std::atomic_bool m_stop;
 
     /**
      * @brief The collection of connected TCP clients
      */
     std::unordered_map<ClientHandle, Client> m_clients;
+
+    /**
+     * @brief Mutex protecting m_clients
+     */
+    std::mutex m_mutex;
 
     /**
      * @brief The registered callback recipient

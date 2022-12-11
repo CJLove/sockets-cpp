@@ -1,6 +1,7 @@
 #pragma once
 
 #include "SocketCommon.h"
+#include <atomic>
 #include <arpa/inet.h>
 #include <cerrno>
 #include <iostream>
@@ -119,7 +120,7 @@ private:
     /**
      * @brief Indicator that the receive thread should stop
      */
-    bool m_stop = false;
+    std::atomic_bool m_stop;
 
     /**
      * @brief Socket address of the server

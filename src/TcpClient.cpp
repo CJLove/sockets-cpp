@@ -6,11 +6,11 @@
     #include <fmt/core.h>
 #endif
 
-constexpr size_t MAX_PACKET_SIZE = 4096;
+constexpr size_t MAX_PACKET_SIZE = 65536;
 
 namespace sockets {
 
-TcpClient::TcpClient(IClientSocket *callback, SocketOpt *options) : m_server({}), m_callback(callback) {
+TcpClient::TcpClient(IClientSocket *callback, SocketOpt *options) : m_stop(false), m_server({}), m_callback(callback) {
     if (options != nullptr) {
         m_sockOptions = *options;
     }
@@ -124,7 +124,7 @@ void TcpClient::publishDisconnected(const SocketRet &ret) {
 
 void TcpClient::ReceiveTask() {
     constexpr int64_t USEC_DELAY = 500000;
-    while (!m_stop) {
+    while (!m_stop.load()) {
         fd_set fds;
         struct timeval delay { 0, USEC_DELAY };
         FD_ZERO(&fds);
