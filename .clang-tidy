@@ -1,5 +1,5 @@
 ---
-Checks:          '*,-google-runtime-references,-fuchsia*,-abseil*,-readability-else-after-return,-readability-avoid-const-params-in-decls,-hicpp-signed-bitwise,-cppcoreguidelines-pro-bounds-constant-array-index,-cppcoreguidelines-pro-bounds-pointer-arithmetic,-cppcoreguidelines-pro-type-reinterpret-cast,-llvm-header-guard,-readability-static-accessed-through-instance,-google-readability-todo,-clang-diagnostic*,-gsl*,-cppcoreguidelines*,-modernize-use-trailing-return-type,-llvm*,-hicpp*,-misc*,-altera*,-readability-function-cognitive*,-android*,-bugprone-easily-swappable-parameters'
+Checks:          '*,-google-runtime-references,-fuchsia*,-abseil*,-readability-else-after-return,-readability-avoid-const-params-in-decls,-hicpp-signed-bitwise,-cppcoreguidelines-pro-bounds-constant-array-index,-cppcoreguidelines-pro-bounds-pointer-arithmetic,-cppcoreguidelines-pro-type-reinterpret-cast,-llvm-header-guard,-readability-static-accessed-through-instance,-google-readability-todo,-clang-diagnostic*,-gsl*,-cppcoreguidelines*,-modernize-use-trailing-return-type,-llvm*,-hicpp*,-misc*,-altera*,-readability-function-cognitive*,-android*,-bugprone-easily-swappable-parameters,-readability-convert-member-functions-to-static'
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.*'
 AnalyzeTemporaryDtors: false

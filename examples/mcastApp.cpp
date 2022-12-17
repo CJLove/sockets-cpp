@@ -2,27 +2,28 @@
 #include <iostream>
 #include <unistd.h>
 
-class McastApp : public sockets::IUdpSocket {
+class McastApp {
 public:
     // UDP Multicast
     McastApp(const char *multicastAddr, uint16_t port);
 
     virtual ~McastApp() = default;
 
-    void onReceiveData(const char *data, size_t size) override;
+    void onReceiveData(const char *data, size_t size);
 
     void sendMsg(const char *data, size_t len);
 
 private:
-    sockets::UdpSocket m_mcast;
+    sockets::UdpSocket<McastApp> m_mcast;
 };
 
-McastApp::McastApp(const char *multicastAddr, uint16_t port) : m_mcast(this) {
+McastApp::McastApp(const char *multicastAddr, uint16_t port) : m_mcast(*this) {
     sockets::SocketRet ret = m_mcast.startMcast(multicastAddr, port);
     if (ret.m_success) {
         std::cout << "Connected to mcast group " << multicastAddr << ":" << port << "\n";
     } else {
         std::cout << "Error: " << ret.m_msg << "\n";
+        exit(1); // NOLINT
     }
 }
 

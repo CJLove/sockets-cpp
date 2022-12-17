@@ -10,16 +10,16 @@ include_directories(
 
 set (clientApp_SRC clientApp.cpp)
 add_executable( clientApp ${clientApp_SRC} )
-target_link_libraries( clientApp sockets-cpp pthread )
+target_link_libraries( clientApp fmt pthread )
 
 set (serverApp_SRC serverApp.cpp)
 add_executable( serverApp ${serverApp_SRC} )
-target_link_libraries( serverApp sockets-cpp pthread )
+target_link_libraries( serverApp fmt pthread )
 
 set (mcastApp_SRC mcastApp.cpp)
 add_executable( mcastApp ${mcastApp_SRC} )
-target_link_libraries( mcastApp sockets-cpp pthread )
+target_link_libraries( mcastApp fmt pthread )
 
 set (unicastApp_SRC unicastApp.cpp)
 add_executable( unicastApp ${unicastApp_SRC} )
-target_link_libraries( unicastApp sockets-cpp pthread )
+target_link_libraries( unicastApp fmt pthread )

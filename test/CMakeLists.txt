@@ -19,18 +19,16 @@ include_directories(
 )
 
 set ( socketTests_SRC 
-    UdpTester.cpp
     test_AddrLookup.cpp
-#    test_Unicast.cpp
+    test_Unicast.cpp
 #    test_Multicast.cpp
 )
 
 add_executable ( socketTests ${socketTests_SRC} )
 
 
-target_link_libraries( socketTests gtest gtest_main )
+target_link_libraries( socketTests fmt gtest gmock gtest_main )
 
-target_link_libraries( socketTests sockets-cpp )
 
 if (BUILD_COVERAGE)
     target_link_libraries( socketTests gcov )

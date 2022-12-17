@@ -2,29 +2,29 @@
 #include <set>
 #include <unistd.h>
 
-class ServerApp : public sockets::IServerSocket {
+class ServerApp {
 public:
     // TCP Server
     explicit ServerApp(uint16_t port);
 
     virtual ~ServerApp();
 
-    void onClientConnect(const sockets::ClientHandle &client) override;
+    void onClientConnect(const sockets::ClientHandle &client);
 
-    void onReceiveClientData(const sockets::ClientHandle &client, const char *data, size_t size) override;
+    void onReceiveClientData(const sockets::ClientHandle &client, const char *data, size_t size);
 
-    void onClientDisconnect(const sockets::ClientHandle &client, const sockets::SocketRet &ret) override;
+    void onClientDisconnect(const sockets::ClientHandle &client, const sockets::SocketRet &ret);
 
     void sendMsg(int idx, const char *data, size_t len);
 
 private:
-    sockets::TcpServer m_server;
+    sockets::TcpServer<ServerApp> m_server;
     int m_clientIdx = 0;
     std::set<int> m_clients;
     std::mutex m_mutex;
 };
 
-ServerApp::ServerApp(uint16_t port) : m_server(this) {
+ServerApp::ServerApp(uint16_t port) : m_server(*this) {
     sockets::SocketRet ret = m_server.start(port);
     if (ret.m_success) {
         std::cout << "Server started on port " << port << "\n";

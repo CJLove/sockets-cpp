@@ -199,7 +199,7 @@ if(VERBOSE)
     message(STATUS "tests: ${tests}")
 endif(VERBOSE)
 
-add_subdirectory(src)
+#add_subdirectory(src)
 if (BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif(BUILD_EXAMPLES)

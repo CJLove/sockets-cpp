@@ -2,27 +2,28 @@
 #include <iostream>
 #include <unistd.h>
 
-class UnicastApp : public sockets::IUdpSocket {
+class UnicastApp {
 public:
     // UDP Multicast
     UnicastApp(const char *remoteAddr, uint16_t localPort, uint16_t port);
 
     virtual ~UnicastApp() = default;
 
-    void onReceiveData(const char *data, size_t size) override;
+    void onReceiveData(const char *data, size_t size) ;
 
     void sendMsg(const char *data, size_t len);
 
 private:
-    sockets::UdpSocket m_unicast;
+    sockets::UdpSocket<UnicastApp> m_unicast;
 };
 
-UnicastApp::UnicastApp(const char *remoteAddr, uint16_t localPort, uint16_t port) : m_unicast(this) {
+UnicastApp::UnicastApp(const char *remoteAddr, uint16_t localPort, uint16_t port) : m_unicast(*this) {
     sockets::SocketRet ret = m_unicast.startUnicast(remoteAddr, localPort, port);
     if (ret.m_success) {
         std::cout << "Listening on UDP 0.0.0.0:" << localPort << " sending to " << remoteAddr << ":" << port << "\n";
     } else {
         std::cout << "Error: " << ret.m_msg << "\n";
+        exit(1); // NOLINT
     }
 }
 

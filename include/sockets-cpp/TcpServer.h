@@ -1,6 +1,8 @@
 #pragma once
 #include "SocketCommon.h"
+#include "SocketCore.h"
 #include <arpa/inet.h>
+#include <array>
 #include <atomic>
 #include <cerrno>
 #include <cstdio>
@@ -16,8 +18,12 @@
 #include <thread>
 #include <unistd.h>
 #include <unordered_map>
-
+#if defined(FMT_SUPPORT)
+#include <fmt/core.h>
+#endif
 namespace sockets {
+
+constexpr size_t MAX_PACKET_SIZE = 65536;
 
 /**
  * @brief ClientHandle is an identifier which refers to a TCP client connection
@@ -26,37 +32,11 @@ namespace sockets {
  */
 using ClientHandle = int32_t;
 
-class IServerSocket {
-public:
-    /**
-     * @brief Receive notification of a new client connection
-     *
-     * @param client - Handle of the new TCP client
-     */
-    virtual void onClientConnect(const ClientHandle &client) = 0;
-
-    /**
-     * @brief Receive notification that a TCP client connection has disconnected
-     *
-     * @param client - Handle of the TCP client whose connection dropped
-     * @param ret - Error information
-     */
-    virtual void onClientDisconnect(const ClientHandle &client, const SocketRet &ret) = 0;
-
-    /**
-     * @brief Receive data from a TCP server connection
-     *
-     * @param client - Handle of the TCP client which sent the data
-     * @param data - pointer to received data
-     * @param size - length of received data
-     */
-    virtual void onReceiveClientData(const ClientHandle &client, const char *data, size_t size) = 0;
-};
-
 /**
  * @brief The TcpServer class encapsulates a TCP server supporting one or more TCP client connections
  *
  */
+template <class CallbackImpl, class SocketImpl = sockets::SocketCore>
 class TcpServer {
 public:
     /**
@@ -65,7 +45,12 @@ public:
      * @param callback - pointer to the callback recipient
      * @param options - optional socket options to specify SO_SNDBUF and SO_RCVBUF
      */
-    explicit TcpServer(IServerSocket *callback, SocketOpt *options = nullptr);
+    explicit TcpServer(CallbackImpl &callback, SocketOpt *options = nullptr)
+        : m_serverAddress({}), m_clientAddress({}), m_fds({}), m_stop(false), m_callback(callback) {
+        if (options != nullptr) {
+            m_sockOptions = *options;
+        }
+    }
 
     TcpServer(const TcpServer &) = delete;
     TcpServer(TcpServer &&) = delete;
@@ -73,7 +58,9 @@ public:
     /**
      * @brief Shutdown and destroy the TCP Server object
      */
-    ~TcpServer();
+    ~TcpServer() {
+        finish();
+    }
 
     TcpServer &operator=(const TcpServer &) = delete;
     TcpServer &operator=(TcpServer &&) = delete;
@@ -84,7 +71,83 @@ public:
      * @param port - port to listen on for connections
      * @return SocketRet - indicator of whether the server was started successfully
      */
-    SocketRet start(uint16_t port);
+    SocketRet start(uint16_t port) {
+        m_sockfd = 0;
+        SocketRet ret;
+
+        m_sockfd = m_socketCore.Socket(AF_INET, SOCK_STREAM, 0);
+        if (m_sockfd == -1) {  // socket failed
+            ret.m_success = false;
+#if defined(FMT_SUPPORT)
+            ret.m_msg = fmt::format("Error: Socket creation failed errno{}", errno);
+#else
+            ret.m_msg = "Error: Socket creation failed";
+#endif
+            return ret;
+        }
+        // set socket for reuse (otherwise might have to wait 4 minutes every time socket is closed)
+        int option = 1;
+        m_socketCore.SetSockOpt(m_sockfd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
+        // set TX and RX buffer sizes
+        if (m_socketCore.SetSockOpt(m_sockfd, SOL_SOCKET, SO_RCVBUF, reinterpret_cast<char *>(&m_sockOptions.m_rxBufSize),
+                sizeof(m_sockOptions.m_rxBufSize)) < 0) {
+            ret.m_success = false;
+#if defined(FMT_SUPPORT)
+            ret.m_msg = fmt::format("Error: SetSockOpt(SO_RCVBUF) failed: errno {}", errno);
+#else
+            ret.m_msg = "SetSockOpt(SO_REUSEADDR) failed";
+#endif
+            return ret;
+        }
+
+        if (m_socketCore.SetSockOpt(m_sockfd, SOL_SOCKET, SO_SNDBUF, reinterpret_cast<char *>(&m_sockOptions.m_txBufSize),
+                sizeof(m_sockOptions.m_txBufSize)) < 0) {
+            ret.m_success = false;
+#if defined(FMT_SUPPORT)
+            ret.m_msg = fmt::format("Error: SetSockOpt(SO_SNDBUF) failed: errno {}", errno);
+#else
+            ret.m_msg = "SetSockOpt(SO_REUSEADDR) failed";
+#endif
+            return ret;
+        }
+
+        memset(&m_serverAddress, 0, sizeof(m_serverAddress));
+        m_serverAddress.sin_family = AF_INET;
+        m_serverAddress.sin_addr.s_addr = htonl(INADDR_ANY);
+        m_serverAddress.sin_port = htons(port);
+
+        int bindSuccess =
+            m_socketCore.Bind(m_sockfd, reinterpret_cast<struct sockaddr *>(&m_serverAddress), sizeof(m_serverAddress));
+        if (bindSuccess == -1) {  // bind failed
+            ret.m_success = false;
+#if defined(FMT_SUPPORT)
+            ret.m_msg = fmt::format("Error: errno {}", errno);
+#else
+            ret.m_msg = strerror(errno);
+#endif
+            return ret;
+        }
+        const int clientsQueueSize = 5;
+        int listenSuccess = m_socketCore.Listen(m_sockfd, clientsQueueSize);
+        if (listenSuccess == -1) {  // listen failed
+            ret.m_success = false;
+#if defined(FMT_SUPPORT)
+            ret.m_msg = fmt::format("Error: listen() failed errno {}", errno);
+#else
+            ret.m_msg = "Error: listen() failed";
+#endif
+            return ret;
+        }
+        ret.m_success = true;
+
+        // Add the accept socket to m_fds
+        FD_ZERO(&m_fds);
+        FD_SET(m_sockfd, &m_fds);
+
+        m_thread = std::thread(&TcpServer::serverTask, this);
+
+        return ret;
+    }
 
     /**
      * @brief Remove a TCP client connection
@@ -93,7 +156,20 @@ public:
      * @return true
      * @return false
      */
-    bool deleteClient(ClientHandle &handle);
+    bool deleteClient(ClientHandle &handle) {
+        std::lock_guard<std::mutex> guard(m_mutex);
+        if (m_clients.count(handle) > 0) {
+            Client &client = m_clients[handle];
+
+            // Close socket connection and remove from m_fds
+            close(client.m_sockfd);
+            FD_CLR(client.m_sockfd, &m_fds);
+
+            m_clients.erase(handle);
+            return true;
+        }
+        return false;
+    }
 
     /**
      * @brief Send a broadcast message to all connected TCP clients
@@ -102,7 +178,20 @@ public:
      * @param size - length of the message data
      * @return SocketRet - indication that the message was sent to all clients
      */
-    SocketRet sendBcast(const char *msg, size_t size);
+    SocketRet sendBcast(const char *msg, size_t size) {
+        SocketRet ret;
+        ret.m_success = true;
+        std::lock_guard<std::mutex> guard(m_mutex);
+        for (auto &client : m_clients) {
+            auto clientRet = client.second.sendMsg(msg, size);
+            ret.m_success &= clientRet.m_success;
+            if (!clientRet.m_success) {
+                ret.m_msg = clientRet.m_msg;
+                break;
+            }
+        }
+        return ret;
+    }
 
     /**
      * @brief Send a message to a specific connected client
@@ -112,14 +201,68 @@ public:
      * @param size - length of the message data
      * @return SocketRet - indication that the message was sent to the client
      */
-    SocketRet sendClientMessage(ClientHandle &client, const char *msg, size_t size);
+    SocketRet sendClientMessage(ClientHandle &clientId, const char *msg, size_t size) {
+        SocketRet ret;
+        Client *client = nullptr;
+        {
+            std::lock_guard<std::mutex> guard(m_mutex);
+            if (m_clients.count(clientId) > 0) {
+                client = &m_clients[clientId];
+            }
+        }
+        if (client != nullptr) {
+            client->sendMsg(msg, size);
+            ret.m_success = true;
+            return ret;
+        }
+#if defined(FMT_SUPPORT)
+        ret.m_msg = fmt::format("Client {} not found", clientId);
+#else
+        ret.m_msg = "Client not found";
+#endif
+        ret.m_success = false;
+        return ret;
+    }
 
     /**
      * @brief Shut down the TCP server
      *
      * @return SocketRet - indication that the server was stopped successfully
      */
-    SocketRet finish();
+    SocketRet finish() {
+        SocketRet ret;
+        m_stop = true;
+        m_thread.join();
+
+        // Close client sockets
+        std::lock_guard<std::mutex> guard(m_mutex);
+        for (auto &client : m_clients) {
+            if (m_socketCore.Close(client.second.m_sockfd) == -1) {
+                // close() failed
+                ret.m_success = false;
+#if defined(FMT_SUPPORT)
+                ret.m_msg = fmt::format("Error: close() failed errno {}", errno);
+#else
+                ret.m_msg = "Error: close() failed";
+#endif
+                return ret;
+            }
+        }
+
+        // Close accept socket
+        if (m_socketCore.Close(m_sockfd) == -1) {  // close failed
+            ret.m_success = false;
+#if defined(FMT_SUPPORT)
+            ret.m_msg = fmt::format("Error: close() failed errno {}", errno);
+#else
+            ret.m_msg = "Error: close() failed";
+#endif
+            return ret;
+        }
+        m_clients.clear();
+        ret.m_success = true;
+        return ret;
+    }
 
     /**
      * @brief Get current info for a client
@@ -131,13 +274,24 @@ public:
      * @return true - clientId is valid and information was returned
      * @return false - clientId is invalid
      */
-    bool getClientInfo(ClientHandle clientId, std::string &ip, uint16_t &port, bool &connected);
+    bool getClientInfo(ClientHandle clientId, std::string &ip, uint16_t &port, bool &connected) {
+        std::lock_guard<std::mutex> guard(m_mutex);
+        if (m_clients.count(clientId) > 0) {
+            Client &client = m_clients[clientId];
+            ip = client.m_ip;
+            port = client.m_port;
+            connected = client.m_isConnected;
+            return true;
+        }
+        return false;
+    }
 
 private:
     /**
      * @brief Client represents a connection to a TCP client
      */
     struct Client {
+        SocketImpl *m_socketCore;
 
         /**
          * @brief The TCP client's IP address
@@ -166,12 +320,15 @@ private:
          * @param clientFd - file descriptor for the client connection
          * @param port - client's port number
          */
-        Client(const char *ipAddr, int clientFd, uint16_t port);
+        Client(SocketImpl *socketImpl, const char *ipAddr, int clientFd, uint16_t port)
+            : m_socketCore(socketImpl), m_ip(ipAddr), m_sockfd(clientFd), m_port(port), m_isConnected(true) {
+        }
 
         /**
          * @brief Construct a new Client object
          */
-        Client() = default;
+        Client() : m_socketCore(nullptr), m_sockfd(-1), m_port(0), m_isConnected(false) {
+        }
 
         /**
          * @brief Send a message to this TCP client
@@ -180,7 +337,34 @@ private:
          * @param size - length of the message data
          * @return SocketRet - indication of whether the message was sent successfully
          */
-        SocketRet sendMsg(const char *msg, size_t size) const;
+        SocketRet sendMsg(const char *msg, size_t size) {
+            SocketRet ret;
+            if (m_sockfd != 0) {
+                ssize_t numBytesSent = m_socketCore->Send(m_sockfd, reinterpret_cast<const void *>(msg), size, 0);
+                if (numBytesSent < 0) {  // send failed
+                    ret.m_success = false;
+#if defined(FMT_SUPPORT)
+                    ret.m_msg = fmt::format("Error: send() failed errno {}", errno);
+#else
+                    ret.m_msg = "Error: send() failed";
+#endif
+                    return ret;
+                }
+                if (static_cast<size_t>(numBytesSent) < size) {  // not all bytes were sent
+                    ret.m_success = false;
+#if defined(FMT_SUPPORT)
+                    ret.m_msg = fmt::format("Only {} bytes out of {} was sent to client", numBytesSent, size);
+#else
+                    char msg[100];
+                    snprintf(msg, sizeof(msg), "Only %ld bytes out of %lu was sent to client", numBytesSent, size);
+                    ret.m_msg = msg;
+#endif
+                    return ret;
+                }
+            }
+            ret.m_success = true;
+            return ret;
+        }
     };
 
     /**
@@ -190,33 +374,108 @@ private:
      * @param msg - pointer to the message data
      * @param msgSize - length of the message data
      */
-    void publishClientMsg(const ClientHandle &client, const char *msg, size_t msgSize);
+    void publishClientMsg(const ClientHandle &client, const char *msg, size_t msgSize) {
+        m_callback.onReceiveClientData(client, msg, msgSize);
+    }
 
     /**
      * @brief Publish notification that a TCP client has disconnected
      *
      * @param client - handle of the TCP client which has disconnected
      */
-    void publishDisconnected(const ClientHandle &client);
+    void publishDisconnected(const ClientHandle &client) {
+        SocketRet ret;
+#if defined(FMT_SUPPORT)
+        ret.m_msg = fmt::format("Client {} disconnected", client);
+#else
+        ret.m_msg = "Client disconnected.";
+#endif
+        m_callback.onClientDisconnect(client, ret);
+    }
 
     /**
      * @brief Publish notification of a new TCP client connection
      *
      * @param client - handle of the new TCP client
      */
-    void publishClientConnect(const ClientHandle &client);
+    void publishClientConnect(const ClientHandle &client) {
+        m_callback.onClientConnect(client);
+    }
 
     /**
      * @brief Find the maximum file descriptor among listen socket and all client sockets for
      *          use by select()
      * @return int
      */
-    int findMaxFd();
+    int findMaxFd() {
+        int maxfd = m_sockfd;
+        for (const auto &client : m_clients) {
+            maxfd = std::max(maxfd, client.second.m_sockfd);
+        }
+        return maxfd + 1;
+    }
 
     /**
      * @brief Thread handling all accept requests and reception of data from connected clients
      */
-    void serverTask();
+    void serverTask() {
+        constexpr int64_t USEC_DELAY = 500000;
+        std::array<char, MAX_PACKET_SIZE> msg;
+
+        while (!m_stop.load()) {
+            struct timeval delay {
+                0, USEC_DELAY
+            };
+            fd_set read_set = m_fds;
+            int maxfds = findMaxFd();
+            int selectRet = select(maxfds, &read_set, nullptr, nullptr, &delay);
+            if (selectRet <= 0) {
+                // select() failed or timed out, so retry after a shutdown check
+                continue;
+            }
+            for (int fd = 0; fd < maxfds; fd++) {
+                if (FD_ISSET(fd, &read_set)) {
+                    Client *client = nullptr;
+                    {
+                        std::lock_guard<std::mutex> guard(m_mutex);
+                        if (m_clients.count(fd) > 0) {
+                            client = &m_clients[fd];
+                        }
+                    }
+                    if (client != nullptr) {
+                        // data on client socket
+                        ssize_t numOfBytesReceived = recv(fd, msg.data(), MAX_PACKET_SIZE, 0);
+                        if (numOfBytesReceived < 1) {
+                            client->m_isConnected = false;
+                            if (numOfBytesReceived == 0) {  // client closed connection
+                                deleteClient(fd);
+                                publishDisconnected(fd);
+                            }
+                        } else {
+                            publishClientMsg(fd, msg.data(), static_cast<size_t>(numOfBytesReceived));
+                        }
+                    } else {
+                        // data on accept socket
+                        socklen_t sosize = sizeof(m_clientAddress);
+                        int clientfd = accept(fd, reinterpret_cast<struct sockaddr *>(&m_clientAddress), &sosize);
+                        if (clientfd == -1) {
+                            // accept() failed
+                        } else {
+                            std::array<char, INET_ADDRSTRLEN> addr;
+                            inet_ntop(AF_INET, &m_clientAddress.sin_addr, addr.data(), INET_ADDRSTRLEN);
+                            {
+                                std::lock_guard<std::mutex> guard(m_mutex);
+                                m_clients.emplace(clientfd,
+                                    Client(&m_socketCore, addr.data(), clientfd, static_cast<uint16_t>(ntohs(m_clientAddress.sin_port))));
+                            }
+                            FD_SET(clientfd, &m_fds);
+                            publishClientConnect(clientfd);
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     /**
      * @brief The socket file descriptor used for accepting connections
@@ -256,7 +515,7 @@ private:
     /**
      * @brief The registered callback recipient
      */
-    IServerSocket *m_callback;
+    CallbackImpl &m_callback;
 
     /**
      * @brief Server thread
@@ -267,6 +526,11 @@ private:
      * @brief Socket options for SO_SNDBUF and SO_RCVBUF
      */
     SocketOpt m_sockOptions;
+
+    /**
+     * @brief Interface for socket calls
+     */
+    SocketImpl m_socketCore;
 };
 
 }  // Namespace sockets

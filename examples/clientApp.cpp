@@ -1,31 +1,32 @@
 #include "TcpClient.h"
 #include <unistd.h>
 
-class ClientApp : public sockets::IClientSocket {
+class ClientApp {
 public:
     // TCP Client
     ClientApp(const char *remoteIp, uint16_t port);
 
     virtual ~ClientApp() = default;
 
-    void onReceiveData(const char *data, size_t size) override;
+    void onReceiveData(const char *data, size_t size);
 
-    void onDisconnect(const sockets::SocketRet &ret) override;
+    void onDisconnect(const sockets::SocketRet &ret);
 
     void sendMsg(const char *data, size_t len);
 
 private:
-    sockets::TcpClient m_client;
+    sockets::TcpClient<ClientApp> m_client;
 };
 
-ClientApp::ClientApp(const char *remoteIp, uint16_t port) : m_client(this) {
+ClientApp::ClientApp(const char *remoteIp, uint16_t port) : m_client(*this) {
     while (true) {
         sockets::SocketRet ret = m_client.connectTo(remoteIp, port);
         if (ret.m_success) {
             std::cout << "Connected to " << remoteIp << ":" << port << "\n";
             break;
         } else {
-            sleep(1);   // NOLINT
+            std::cout << ret.m_msg << "\n";
+            exit(1);   // NOLINT
         }
     }
 }
