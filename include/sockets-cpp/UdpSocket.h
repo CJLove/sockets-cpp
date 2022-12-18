@@ -34,7 +34,7 @@ public:
      * @param options - optional socket options
      */
     explicit UdpSocket(CallbackImpl &callback, SocketOpt *options = nullptr)
-        : m_sockaddr({}), m_callback(callback), m_addrLookup(m_socketCore) {
+        : m_sockaddr({}), m_stop(false), m_callback(callback), m_addrLookup(m_socketCore) {
         if (options != nullptr) {
             m_sockOptions = *options;
         }
@@ -339,7 +339,6 @@ private:
      */
     void ReceiveTask() {
         constexpr int64_t USEC_DELAY = 500000;
-        m_stop = false;
         while (!m_stop.load()) {
             if (m_fd != -1) {
                 fd_set fds;

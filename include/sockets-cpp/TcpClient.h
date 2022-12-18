@@ -40,7 +40,7 @@ public:
      * @param options - optional socket options to configure SO_SNDBUF and SO_RCVBUF
      */
     explicit TcpClient(CallbackImpl &callback, SocketOpt *options = nullptr)
-        : m_callback(callback), m_addrLookup(m_socketCore) {
+        : m_stop(false), m_callback(callback), m_addrLookup(m_socketCore) {
         if (options != nullptr) {
             m_sockOptions = *options;
         }
@@ -172,8 +172,8 @@ public:
      * @return SocketRet - indication of whether the client was shut down successfully
      */
     SocketRet finish() {
+        m_stop.store(true);
         if (m_thread.joinable()) {
-            m_stop = true;
             m_thread.join();
         }
         SocketRet ret;

@@ -17,7 +17,7 @@ public:
     TcpClientTestApp(): m_socket(*this)
     {};
 
-    TcpClientTestApp(sockets::SocketOpt *opts): m_socket(*this)
+    TcpClientTestApp(sockets::SocketOpt *opts): m_socket(*this,opts)
     {};
 
     virtual ~TcpClientTestApp() = default;

@@ -45,7 +45,7 @@ void TcpServerTestApp::onReceiveClientData(const sockets::ClientHandle &client, 
     m_receiveData[client] = std::string(data,size);
 }
 
-void TcpServerTestApp::onClientDisconnect(const sockets::ClientHandle &client, const sockets::SocketRet &ret) {
+void TcpServerTestApp::onClientDisconnect(const sockets::ClientHandle &client, const sockets::SocketRet &) {
     m_clients.erase(client);
 }
 
