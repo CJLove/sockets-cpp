@@ -5,10 +5,20 @@
 #include <array>
 #include <atomic>
 #include <cstdint>
-#include <netinet/in.h>
 #include <string>
-#include <sys/socket.h>
-#include <thread>
+
+#ifdef _WIN32
+    #ifndef WIN32_LEAN_AND_MEAN
+        #define WIN32_LEAN_AND_MEAN
+    #endif // WIN32_LEAN_AND_MEAN
+    #include <winsock2.h>
+    #include <windows.h>
+    #include <ws2tcpip.h>
+#else
+    #include <netinet/in.h>
+    #include <sys/socket.h>
+#endif
+    #include <thread>
 #if defined(FMT_SUPPORT)
 #include <fmt/core.h>
 #endif
@@ -70,6 +80,22 @@ public:
      */
     SocketRet startMcast(const char *mcastAddr, uint16_t port) {
         SocketRet ret;
+
+#ifdef _WIN32
+        int result;
+
+        // Initialize Winsock
+        result = WSAStartup(MAKEWORD(2,2), &m_wsaData);
+        if (result != 0) {
+#if defined(FMT_SUPPORT)
+            ret.m_msg = fmt::format("Error: WSAStartup() failed: {}", result);
+#else
+            ret.m_msg = "WSAStartup() failed";
+#endif
+            ret.m_success = false;
+            return ret;
+        }
+#endif
         m_fd = m_socketCore.Socket(AF_INET, SOCK_DGRAM, 0);
         if (m_fd < 0) {
             ret.m_success = false;
@@ -167,6 +193,22 @@ public:
     SocketRet startUnicast(const char *remoteAddr, uint16_t localPort, uint16_t port) {
         SocketRet ret;
 
+#ifdef _WIN32
+        int result;
+
+        // Initialize Winsock
+        result = WSAStartup(MAKEWORD(2,2), &m_wsaData);
+        if (result != 0) {
+#if defined(FMT_SUPPORT)
+            ret.m_msg = fmt::format("Error: WSAStartup() failed: {}", result);
+#else
+            ret.m_msg = "WSAStartup() failed";
+#endif
+            ret.m_success = false;
+            return ret;
+        }
+#endif
+
         // store the remoteaddress for use by sendto()
         memset(&m_sockaddr, 0, sizeof(sockaddr));
         m_sockaddr.sin_family = AF_INET;
@@ -193,6 +235,7 @@ public:
      */
     SocketRet startUnicast(uint16_t localPort) {
         SocketRet ret;
+
         m_fd = m_socketCore.Socket(AF_INET, SOCK_DGRAM, 0);
         if (m_fd < 0) {
             ret.m_success = false;
@@ -404,6 +447,10 @@ private:
      * @brief Helper for hostname resolution
      */
     AddrLookup<SocketImpl> m_addrLookup;
+
+#ifdef _WIN32
+    WSADATA  m_wsaData;
+#endif
 };
 
 }  // Namespace sockets
