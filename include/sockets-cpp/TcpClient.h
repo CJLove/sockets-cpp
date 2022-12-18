@@ -59,6 +59,12 @@ public:
     TcpClient &operator=(const TcpClient &) = delete;
     TcpClient &operator=(TcpClient &&) = delete;
 
+#if defined(TEST_CORE_ACCESS)
+    SocketImpl &getCore() {
+        return m_socketCore;
+    }
+#endif
+
     /**
      * @brief Establish the TCP client connection
      *
@@ -118,7 +124,6 @@ public:
 
         int connectRet = m_socketCore.Connect(m_sockfd, reinterpret_cast<struct sockaddr *>(&m_server), sizeof(m_server));
         if (connectRet == -1) {
-            m_socketCore.Close(m_sockfd);
             m_sockfd = 0;
             ret.m_success = false;
 #if defined(FMT_SUPPORT)
@@ -172,15 +177,18 @@ public:
             m_thread.join();
         }
         SocketRet ret;
-        if (m_socketCore.Close(m_sockfd) == -1) {  // close failed
-            ret.m_success = false;
+        if (m_sockfd != -1) {
+            if (m_socketCore.Close(m_sockfd) == -1) {  // close failed
+                ret.m_success = false;
 #if defined(FMT_SUPPORT)
-            ret.m_msg = fmt::format("Error: close() failed errno {}", errno);
+                ret.m_msg = fmt::format("Error: close() failed errno {}", errno);
 #else
-            ret.m_msg = "Error: close() failed";
+                ret.m_msg = "Error: close() failed";
 #endif
-            return ret;
+                return ret;
+            }
         }
+        m_sockfd = -1;
         ret.m_success = true;
         return ret;
     }
@@ -288,7 +296,7 @@ private:
     /**
      * @brief Helper for hostname resolution
      */
-    AddrLookup<SocketCore> m_addrLookup;
+    AddrLookup<SocketImpl> m_addrLookup;
 };
 
 }  // Namespace sockets
