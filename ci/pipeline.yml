@@ -40,7 +40,7 @@ jobs:
     trigger: true
   - in_parallel:
     - task: asan
-      priviledged: true
+      privileged: true
       file: sockets-cpp-git/ci/asan.yml
     - task: tsan
       file: sockets-cpp-git/ci/tsan.yml
