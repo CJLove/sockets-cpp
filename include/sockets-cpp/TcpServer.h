@@ -65,6 +65,12 @@ public:
     TcpServer &operator=(const TcpServer &) = delete;
     TcpServer &operator=(TcpServer &&) = delete;
 
+#if defined(TEST_CORE_ACCESS)
+    SocketImpl &getCore() {
+        return m_socketCore;
+    }
+#endif
+
     /**
      * @brief Start the TCP server listening on the specified port number
      *
@@ -72,7 +78,6 @@ public:
      * @return SocketRet - indicator of whether the server was started successfully
      */
     SocketRet start(uint16_t port) {
-        m_sockfd = 0;
         SocketRet ret;
 
         m_sockfd = m_socketCore.Socket(AF_INET, SOCK_STREAM, 0);
@@ -87,7 +92,16 @@ public:
         }
         // set socket for reuse (otherwise might have to wait 4 minutes every time socket is closed)
         int option = 1;
-        m_socketCore.SetSockOpt(m_sockfd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
+        if (m_socketCore.SetSockOpt(m_sockfd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option)) < 0) {
+            ret.m_success = false;
+#if defined(FMT_SUPPORT)
+            ret.m_msg = fmt::format("Error: SetSockOpt(SO_REUSEADDR) failed: errno {}", errno);
+#else
+            ret.m_msg = "SetSockOpt(SO_REUSEADDR) failed";
+#endif
+            return ret;            
+        }
+
         // set TX and RX buffer sizes
         if (m_socketCore.SetSockOpt(m_sockfd, SOL_SOCKET, SO_RCVBUF, reinterpret_cast<char *>(&m_sockOptions.m_rxBufSize),
                 sizeof(m_sockOptions.m_rxBufSize)) < 0) {
@@ -95,7 +109,7 @@ public:
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: SetSockOpt(SO_RCVBUF) failed: errno {}", errno);
 #else
-            ret.m_msg = "SetSockOpt(SO_REUSEADDR) failed";
+            ret.m_msg = "SetSockOpt(SO_RCVBUF) failed";
 #endif
             return ret;
         }
@@ -106,7 +120,7 @@ public:
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: SetSockOpt(SO_SNDBUF) failed: errno {}", errno);
 #else
-            ret.m_msg = "SetSockOpt(SO_REUSEADDR) failed";
+            ret.m_msg = "SetSockOpt(SO_SNDBUF) failed";
 #endif
             return ret;
         }
@@ -162,7 +176,7 @@ public:
             Client &client = m_clients[handle];
 
             // Close socket connection and remove from m_fds
-            close(client.m_sockfd);
+            m_socketCore.Close(client.m_sockfd);
             FD_CLR(client.m_sockfd, &m_fds);
 
             m_clients.erase(handle);
@@ -211,8 +225,7 @@ public:
             }
         }
         if (client != nullptr) {
-            client->sendMsg(msg, size);
-            ret.m_success = true;
+            ret = client->sendMsg(msg, size);
             return ret;
         }
 #if defined(FMT_SUPPORT)
@@ -232,7 +245,10 @@ public:
     SocketRet finish() {
         SocketRet ret;
         m_stop = true;
-        m_thread.join();
+        if (m_thread.joinable()) {
+            m_stop = true;
+            m_thread.join();
+        }
 
         // Close client sockets
         std::lock_guard<std::mutex> guard(m_mutex);
@@ -250,15 +266,18 @@ public:
         }
 
         // Close accept socket
-        if (m_socketCore.Close(m_sockfd) == -1) {  // close failed
-            ret.m_success = false;
+        if (m_sockfd != -1) {
+            if (m_socketCore.Close(m_sockfd) == -1) {  // close failed
+                ret.m_success = false;
 #if defined(FMT_SUPPORT)
-            ret.m_msg = fmt::format("Error: close() failed errno {}", errno);
+                ret.m_msg = fmt::format("Error: close() failed errno {}", errno);
 #else
-            ret.m_msg = "Error: close() failed";
+                ret.m_msg = "Error: close() failed";
 #endif
-            return ret;
+                return ret;
+            }
         }
+        m_sockfd = -1;
         m_clients.clear();
         ret.m_success = true;
         return ret;
@@ -428,7 +447,7 @@ private:
             };
             fd_set read_set = m_fds;
             int maxfds = findMaxFd();
-            int selectRet = select(maxfds, &read_set, nullptr, nullptr, &delay);
+            int selectRet = m_socketCore.Select(maxfds, &read_set, nullptr, nullptr, &delay);
             if (selectRet <= 0) {
                 // select() failed or timed out, so retry after a shutdown check
                 continue;
@@ -444,7 +463,7 @@ private:
                     }
                     if (client != nullptr) {
                         // data on client socket
-                        ssize_t numOfBytesReceived = recv(fd, msg.data(), MAX_PACKET_SIZE, 0);
+                        ssize_t numOfBytesReceived = m_socketCore.Recv(fd, msg.data(), MAX_PACKET_SIZE, 0);
                         if (numOfBytesReceived < 1) {
                             client->m_isConnected = false;
                             if (numOfBytesReceived == 0) {  // client closed connection
@@ -457,7 +476,7 @@ private:
                     } else {
                         // data on accept socket
                         socklen_t sosize = sizeof(m_clientAddress);
-                        int clientfd = accept(fd, reinterpret_cast<struct sockaddr *>(&m_clientAddress), &sosize);
+                        int clientfd = m_socketCore.Accept(fd, reinterpret_cast<struct sockaddr *>(&m_clientAddress), &sosize);
                         if (clientfd == -1) {
                             // accept() failed
                         } else {
@@ -466,7 +485,8 @@ private:
                             {
                                 std::lock_guard<std::mutex> guard(m_mutex);
                                 m_clients.emplace(clientfd,
-                                    Client(&m_socketCore, addr.data(), clientfd, static_cast<uint16_t>(ntohs(m_clientAddress.sin_port))));
+                                    Client(&m_socketCore, addr.data(), clientfd,
+                                        static_cast<uint16_t>(ntohs(m_clientAddress.sin_port))));
                             }
                             FD_SET(clientfd, &m_fds);
                             publishClientConnect(clientfd);

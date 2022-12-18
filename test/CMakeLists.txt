@@ -22,6 +22,7 @@ set ( socketTests_SRC
     test_AddrLookup.cpp
     test_UdpSocket.cpp
     test_TcpClient.cpp
+    test_TcpServer.cpp
 )
 
 add_executable ( socketTests ${socketTests_SRC} )
