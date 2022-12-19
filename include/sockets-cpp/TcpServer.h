@@ -11,14 +11,6 @@
 #include <functional>
 #include <iostream>
 #include <mutex>
-#ifdef _WIN32
-
-#else
-    #include <arpa/inet.h>
-    #include <netinet/in.h>
-    #include <sys/socket.h>
-    #include <unistd.h>
-#endif
 #include <string>
 #include <sys/types.h>
 #include <thread>

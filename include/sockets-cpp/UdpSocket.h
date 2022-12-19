@@ -6,19 +6,7 @@
 #include <atomic>
 #include <cstdint>
 #include <string>
-
-#ifdef _WIN32
-    // #ifndef WIN32_LEAN_AND_MEAN
-    //     #define WIN32_LEAN_AND_MEAN
-    // #endif // WIN32_LEAN_AND_MEAN
-    // #include <winsock2.h>
-    // #include <windows.h>
-    // #include <ws2tcpip.h>
-#else
-    #include <netinet/in.h>
-    #include <sys/socket.h>
-#endif
-    #include <thread>
+#include <thread>
 #if defined(FMT_SUPPORT)
 #include <fmt/core.h>
 #endif
