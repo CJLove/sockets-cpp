@@ -1,7 +1,7 @@
 #pragma once
 #include "SocketCommon.h"
 #include "SocketCore.h"
-#include <arpa/inet.h>
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <cerrno>
@@ -11,12 +11,9 @@
 #include <functional>
 #include <iostream>
 #include <mutex>
-#include <netinet/in.h>
 #include <string>
-#include <sys/socket.h>
 #include <sys/types.h>
 #include <thread>
-#include <unistd.h>
 #include <unordered_map>
 #if defined(FMT_SUPPORT)
 #include <fmt/core.h>
@@ -24,6 +21,8 @@
 namespace sockets {
 
 constexpr size_t MAX_PACKET_SIZE = 65536;
+
+constexpr uint32_t MSG_SIZE = 100;
 
 /**
  * @brief ClientHandle is an identifier which refers to a TCP client connection
@@ -80,13 +79,28 @@ public:
     SocketRet start(uint16_t port) {
         SocketRet ret;
 
+        int result = m_socketCore.Initialize();
+        if (result != 0) {
+#if defined(FMT_SUPPORT)
+            ret.m_msg = fmt::format("Error: Socket initialization failed: {}", result);
+#else
+            std::array<char,MSG_SIZE> msg;
+            (void)snprintf(msg.data(),msg.size(),"Error: Socket initialization failed: %d",result);
+            ret.m_msg = msg.data();
+#endif
+            ret.m_success = false;
+            return ret;
+        }
+
         m_sockfd = m_socketCore.Socket(AF_INET, SOCK_STREAM, 0);
-        if (m_sockfd == -1) {  // socket failed
+        if (m_sockfd == INVALID_SOCKET) {  // socket failed
             ret.m_success = false;
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: Socket creation failed errno{}", errno);
 #else
-            ret.m_msg = "Error: Socket creation failed";
+            std::array<char,MSG_SIZE> msg;
+            (void)snprintf(msg.data(),msg.size(),"Error: Socket creation failed: %d",errno);
+            ret.m_msg = msg.data();
 #endif
             return ret;
         }
@@ -97,7 +111,9 @@ public:
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: SetSockOpt(SO_REUSEADDR) failed: errno {}", errno);
 #else
-            ret.m_msg = "SetSockOpt(SO_REUSEADDR) failed";
+            std::array<char,MSG_SIZE> msg;
+            (void)snprintf(msg.data(),msg.size(),"Error: SetSockOpt(SO_REUSEADDR) failed: %d",errno);
+            ret.m_msg = msg.data();
 #endif
             return ret;            
         }
@@ -109,7 +125,9 @@ public:
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: SetSockOpt(SO_RCVBUF) failed: errno {}", errno);
 #else
-            ret.m_msg = "SetSockOpt(SO_RCVBUF) failed";
+            std::array<char,MSG_SIZE> msg;
+            (void)snprintf(msg.data(),msg.size(),"Error: SetSockOpt(SO_RCVBUF) failed: %d",errno);
+            ret.m_msg = msg.data();
 #endif
             return ret;
         }
@@ -120,7 +138,9 @@ public:
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: SetSockOpt(SO_SNDBUF) failed: errno {}", errno);
 #else
-            ret.m_msg = "SetSockOpt(SO_SNDBUF) failed";
+            std::array<char,MSG_SIZE> msg;
+            (void)snprintf(msg.data(),msg.size(),"Error: SetSockOpt(SO_SNDBUF) failed: %d",errno);
+            ret.m_msg = msg.data();
 #endif
             return ret;
         }
@@ -137,7 +157,9 @@ public:
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: errno {}", errno);
 #else
-            ret.m_msg = strerror(errno);
+            std::array<char,MSG_SIZE> msg;
+            (void)snprintf(msg.data(),msg.size(),"BInd error: %d",errno);
+            ret.m_msg = msg.data();
 #endif
             return ret;
         }
@@ -148,7 +170,9 @@ public:
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: listen() failed errno {}", errno);
 #else
-            ret.m_msg = "Error: listen() failed";
+            std::array<char,MSG_SIZE> msg;
+            (void)snprintf(msg.data(),msg.size(),"Error: listen() failed: %d",errno);
+            ret.m_msg = msg.data();
 #endif
             return ret;
         }
@@ -229,9 +253,11 @@ public:
             return ret;
         }
 #if defined(FMT_SUPPORT)
-        ret.m_msg = fmt::format("Client {} not found", clientId);
+        ret.m_msg = fmt::format("Error: Client {} not found", clientId);
 #else
-        ret.m_msg = "Client not found";
+        std::array<char,MSG_SIZE> errMsg;
+        (void)snprintf(errMsg.data(),errMsg.size(),"Error: Client %d not found",clientId);
+        ret.m_msg = errMsg.data();
 #endif
         ret.m_success = false;
         return ret;
@@ -239,65 +265,47 @@ public:
 
     /**
      * @brief Shut down the TCP server
-     *
-     * @return SocketRet - indication that the server was stopped successfully
      */
-    SocketRet finish() {
-        SocketRet ret;
+    void finish() {
         m_stop = true;
         if (m_thread.joinable()) {
             m_stop = true;
-            m_thread.join();
+            try {
+                m_thread.join();
+            }
+            catch (...) {              
+            }
         }
 
         // Close client sockets
         std::lock_guard<std::mutex> guard(m_mutex);
         for (auto &client : m_clients) {
-            if (m_socketCore.Close(client.second.m_sockfd) == -1) {
-                // close() failed
-                ret.m_success = false;
-#if defined(FMT_SUPPORT)
-                ret.m_msg = fmt::format("Error: close() failed errno {}", errno);
-#else
-                ret.m_msg = "Error: close() failed";
-#endif
-                return ret;
-            }
+            m_socketCore.Close(client.second.m_sockfd);
         }
 
         // Close accept socket
-        if (m_sockfd != -1) {
-            if (m_socketCore.Close(m_sockfd) == -1) {  // close failed
-                ret.m_success = false;
-#if defined(FMT_SUPPORT)
-                ret.m_msg = fmt::format("Error: close() failed errno {}", errno);
-#else
-                ret.m_msg = "Error: close() failed";
-#endif
-                return ret;
-            }
+        if (m_sockfd != INVALID_SOCKET) {
+            m_socketCore.Close(m_sockfd);
         }
-        m_sockfd = -1;
+        m_sockfd = INVALID_SOCKET;
         m_clients.clear();
-        ret.m_success = true;
-        return ret;
     }
 
     /**
      * @brief Get current info for a client
      *
      * @param clientId - handle to this client connection
-     * @param ip - Client's IP address
+     * @param ipAddr - Client's IP address
      * @param port - Client's port number
      * @param connected - indicates client is connected
      * @return true - clientId is valid and information was returned
      * @return false - clientId is invalid
      */
-    bool getClientInfo(ClientHandle clientId, std::string &ip, uint16_t &port, bool &connected) {
+    bool getClientInfo(ClientHandle clientId, std::string &ipAddr, uint16_t &port, bool &connected) {
         std::lock_guard<std::mutex> guard(m_mutex);
         if (m_clients.count(clientId) > 0) {
             Client &client = m_clients[clientId];
-            ip = client.m_ip;
+            ipAddr = client.m_ip;
             port = client.m_port;
             connected = client.m_isConnected;
             return true;
@@ -320,7 +328,7 @@ private:
         /**
          * @brief The socket file descriptor for the TCP client connection
          */
-        int m_sockfd = -1;
+        SOCKET m_sockfd = INVALID_SOCKET;
 
         /**
          * @brief The peer's port
@@ -339,14 +347,14 @@ private:
          * @param clientFd - file descriptor for the client connection
          * @param port - client's port number
          */
-        Client(SocketImpl *socketImpl, const char *ipAddr, int clientFd, uint16_t port)
+        Client(SocketImpl *socketImpl, const char *ipAddr, SOCKET clientFd, uint16_t port)
             : m_socketCore(socketImpl), m_ip(ipAddr), m_sockfd(clientFd), m_port(port), m_isConnected(true) {
         }
 
         /**
          * @brief Construct a new Client object
          */
-        Client() : m_socketCore(nullptr), m_sockfd(-1), m_port(0), m_isConnected(false) {
+        Client() : m_socketCore(nullptr), m_sockfd(INVALID_SOCKET) {
         }
 
         /**
@@ -358,14 +366,16 @@ private:
          */
         SocketRet sendMsg(const char *msg, size_t size) {
             SocketRet ret;
-            if (m_sockfd != 0) {
+            if (m_sockfd != INVALID_SOCKET) {
                 ssize_t numBytesSent = m_socketCore->Send(m_sockfd, reinterpret_cast<const void *>(msg), size, 0);
                 if (numBytesSent < 0) {  // send failed
                     ret.m_success = false;
 #if defined(FMT_SUPPORT)
                     ret.m_msg = fmt::format("Error: send() failed errno {}", errno);
 #else
-                    ret.m_msg = "Error: send() failed";
+                    std::array<char,MSG_SIZE> msg;
+                    (void)snprintf(msg.data(),msg.size(),"Error: send() failed: %d",errno);
+                    ret.m_msg = msg.data();
 #endif
                     return ret;
                 }
@@ -374,9 +384,9 @@ private:
 #if defined(FMT_SUPPORT)
                     ret.m_msg = fmt::format("Only {} bytes out of {} was sent to client", numBytesSent, size);
 #else
-                    char msg[100];
-                    snprintf(msg, sizeof(msg), "Only %ld bytes out of %lu was sent to client", numBytesSent, size);
-                    ret.m_msg = msg;
+                    std::array<char,MSG_SIZE> msg;
+                    (void)snprintf(msg.data(), msg.size(), "Only %ld bytes out of %lu was sent to client", numBytesSent, size);
+                    ret.m_msg = msg.data();
 #endif
                     return ret;
                 }
@@ -407,7 +417,9 @@ private:
 #if defined(FMT_SUPPORT)
         ret.m_msg = fmt::format("Client {} disconnected", client);
 #else
-        ret.m_msg = "Client disconnected.";
+        std::array<char,MSG_SIZE> msg;
+        (void)snprintf(msg.data(),msg.size(),"Client %d disconnected",client);
+        ret.m_msg = msg.data();
 #endif
         m_callback.onClientDisconnect(client, ret);
     }
@@ -429,7 +441,7 @@ private:
     int findMaxFd() {
         int maxfd = m_sockfd;
         for (const auto &client : m_clients) {
-            maxfd = std::max(maxfd, client.second.m_sockfd);
+            maxfd = std::max<SOCKET>(maxfd, client.second.m_sockfd);
         }
         return maxfd + 1;
     }
@@ -500,7 +512,7 @@ private:
     /**
      * @brief The socket file descriptor used for accepting connections
      */
-    int m_sockfd = -1;
+    SOCKET m_sockfd = INVALID_SOCKET;
 
     /**
      * @brief The server socket address

@@ -1,0 +1,12 @@
+---
+platform: linux
+image_resource:
+  type: registry-image
+  source: { repository: fir.love.io:3005/amd64/sockets-cpp-gcc1221 }
+
+inputs:
+- name: sockets-cpp-git
+      
+run:
+  path: ./sockets-cpp-git/ci/build.sh
+  args: [ "-builddir=build", "-cc=/usr/bin/clang", "-cxx=/usr/bin/clang++", "--cmake=-DCMAKE_BUILD_TYPE=Release" ]   

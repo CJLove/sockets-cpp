@@ -17,6 +17,10 @@ public:
 
     ~MockSocketCore() = default;
 
+    int Initialize() {
+        return 0;
+    }
+
     MOCK_METHOD(int, Socket, (int domain, int type, int protocol), ());
 
     MOCK_METHOD(int, SetSockOpt, (int sockfd, int level, int optname, void *optval, socklen_t optlen), ());

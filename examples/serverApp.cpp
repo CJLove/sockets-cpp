@@ -1,6 +1,10 @@
 #include "TcpServer.h"
 #include <set>
-#include <unistd.h>
+#ifdef _WIN32
+    #include "getopt.h"
+#else
+    #include <unistd.h>
+#endif
 
 class ServerApp {
 public:
@@ -64,11 +68,11 @@ void ServerApp::onReceiveClientData(const sockets::ClientHandle &client, const c
 }
 
 void ServerApp::onClientConnect(const sockets::ClientHandle &client) {
-    std::string ip;
+    std::string ipAddr;
     uint16_t port;
     bool connected;
-    if (m_server.getClientInfo(client,ip,port,connected)) {
-        std::cout << "Client " << client << " connection from " << ip << ":" << port << std::endl;
+    if (m_server.getClientInfo(client,ipAddr,port,connected)) {
+        std::cout << "Client " << client << " connection from " << ipAddr << ":" << port << std::endl;
         {
             std::lock_guard<std::mutex> guard(m_mutex);
             m_clients.insert(client);

@@ -1,6 +1,10 @@
 #include "UdpSocket.h"
 #include <iostream>
-#include <unistd.h>
+#ifdef _WIN32
+    #include "getopt.h"
+#else
+    #include <unistd.h>
+#endif
 
 class McastApp {
 public:

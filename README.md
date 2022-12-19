@@ -37,7 +37,7 @@ SocketRet startUnicast(uint16_t localPort);
 SocketRet sendMsg(const char *msg, size_t size);
 
 // Shutdown the UDP socket
-SocketRet finish();
+void finish();
 ```
 
 # TcpClient
@@ -62,7 +62,7 @@ SocketRet connectTo(const char *remoteIp, uint16_t remotePort);
 SocketRet sendMsg(const char *msg, size_t size);
 
 // Shutdown the TCP client socket
-SocketRet finish();
+void finish();
 ```
 
 # TcpServer
@@ -92,7 +92,7 @@ SocketRet sendBcast(const char *msg, size_t size);
 SocketRet sendClientMessage(ClientHandle &clientId, const char *msg, size_t size);
 
 // Shutdown the TCP server socket
-SocketRet finish();
+void finish();
 ```
 
 

@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.1)
 
 project(sockets-cpp)
 
+message( "CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME} ")
+
 set(VERSION "0.1.0")
 #---------------------------------------------------------------------------------------
 # Build Types including support for sanitizers
@@ -110,13 +112,13 @@ endif()
 #---------------------------------------------------------------------------------------
 if (FMT_SUPPORT)
   # Fmt
-  find_package(fmt REQUIRED)
+  find_package(fmt 8.0.1 CONFIG REQUIRED)
 
   add_definitions(-DFMT_SUPPORT)
 endif(FMT_SUPPORT)
 
 # Threads
-find_package(Threads)
+find_package(Threads REQUIRED)
 
 if (BUILD_TESTS)
   # Google Test

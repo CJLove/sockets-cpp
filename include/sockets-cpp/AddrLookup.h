@@ -1,9 +1,19 @@
 #pragma once
 #include "SocketCore.h"
-#include <arpa/inet.h>
+#ifdef _WIN32
+    #ifndef WIN32_LEAN_AND_MEAN
+        #define WIN32_LEAN_AND_MEAN
+    #endif // WIN32_LEAN_AND_MEAN
+    #include <winsock2.h>
+    #include <windows.h>
+    #include <ws2tcpip.h>
+    #include <inaddr.h>
+#else
+    #include <arpa/inet.h>
+    #include <netdb.h>
+    #include <sys/socket.h>
+#endif
 #include <cstring>
-#include <netdb.h>
-#include <sys/socket.h>
 #include <sys/types.h>
 
 namespace sockets {

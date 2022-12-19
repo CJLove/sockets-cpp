@@ -5,12 +5,26 @@
             "includePath": [
                 "${workspaceFolder}/include",
                 "${workspaceFolder}/include/sockets-cpp",
-                "${workspaceFolder}/src",
                 "${workspaceFolder}/test",
                 "${workspaceFolder}/examples"
             ],
             "defines": [ "FMT_SUPPORT" ],
             "compilerPath": "/usr/bin/g++",
+            "cStandard": "c11",
+            "cppStandard": "c++14",
+            "configurationProvider": "vector-of-bool.cmake-tools",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json"
+        },
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/include/sockets-cpp",
+                "${workspaceFolder}/test",
+                "${workspaceFolder}/examples"                
+            ],
+            "defines": [ "_WIN32" ],
+            "compilerPath": "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe",
             "cStandard": "c11",
             "cppStandard": "c++14",
             "configurationProvider": "vector-of-bool.cmake-tools",

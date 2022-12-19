@@ -4,6 +4,7 @@
 #include "TcpServer.h"
 #include "MockSocketCore.h"
 #include <map>
+#include <thread>
 
 using ::testing::AtLeast;
 using ::testing::Return;
@@ -136,9 +137,8 @@ TEST(TcpServerSocket,start_success)
     auto ret = app.m_socket.start(5000);
     EXPECT_EQ(true,ret.m_success);
 
-    sleep(1);
-    ret = app.m_socket.finish();
-    EXPECT_EQ(true,ret.m_success);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    app.m_socket.finish();
 }
 
 TEST(TcpServerSocket,client_connect_send)
@@ -163,7 +163,8 @@ TEST(TcpServerSocket,client_connect_send)
     auto ret = app.m_socket.start(5000);
     EXPECT_EQ(true,ret.m_success);
 
-    sleep(1);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+
     sockets::ClientHandle badHandle = 3;
     sockets::ClientHandle goodHandle = 5;
 
@@ -182,9 +183,9 @@ TEST(TcpServerSocket,client_connect_send)
     ret = app.m_socket.sendClientMessage(goodHandle,"Message Data",12);
     EXPECT_EQ(true,ret.m_success);   
 
-    sleep(1);
-    ret = app.m_socket.finish();
-    EXPECT_EQ(true,ret.m_success);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    app.m_socket.finish();
 
     EXPECT_EQ(true,(app.m_clients.find(5) != app.m_clients.end()));
 }
@@ -215,9 +216,9 @@ TEST(TcpServerSocket,client_connect_receive_disconnect)
     auto ret = app.m_socket.start(5000);
     EXPECT_EQ(true,ret.m_success);
 
-    sleep(1);
-    ret = app.m_socket.finish();
-    EXPECT_EQ(true,ret.m_success);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    app.m_socket.finish();
 
     EXPECT_EQ(app.m_receiveData[5],"Received Data");
     EXPECT_EQ(true,(app.m_clients.find(5) == app.m_clients.end()));

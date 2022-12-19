@@ -1,5 +1,9 @@
 #include "TcpClient.h"
-#include <unistd.h>
+#ifdef _WIN32
+    #include "getopt.h"
+#else
+    #include <unistd.h>
+#endif
 
 class ClientApp {
 public:
