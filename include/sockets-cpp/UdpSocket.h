@@ -8,12 +8,12 @@
 #include <string>
 
 #ifdef _WIN32
-    #ifndef WIN32_LEAN_AND_MEAN
-        #define WIN32_LEAN_AND_MEAN
-    #endif // WIN32_LEAN_AND_MEAN
-    #include <winsock2.h>
-    #include <windows.h>
-    #include <ws2tcpip.h>
+    // #ifndef WIN32_LEAN_AND_MEAN
+    //     #define WIN32_LEAN_AND_MEAN
+    // #endif // WIN32_LEAN_AND_MEAN
+    // #include <winsock2.h>
+    // #include <windows.h>
+    // #include <ws2tcpip.h>
 #else
     #include <netinet/in.h>
     #include <sys/socket.h>
@@ -29,6 +29,8 @@ namespace sockets {
  *
  */
 constexpr size_t MAX_PACKET_SIZE = 65507;
+
+constexpr uint32_t MSG_SIZE = 100;
 
 /**
  * @brief The UdpSocket class represents a UDP unicast or multicast socket connection
@@ -86,7 +88,9 @@ public:
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: Socket initialization failed: {}", result);
 #else
-            ret.m_msg = "Socket initialization failed";
+            std::array<char,MSG_SIZE> msg;
+            (void)snprintf(msg.data(),msg.size(),"Error: Socket initialization failed: %d",result);
+            ret.m_msg = msg.data();
 #endif
             ret.m_success = false;
             return ret;
@@ -98,7 +102,9 @@ public:
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: socket() failed: errno {}", errno);
 #else
-            ret.m_msg = "socket() failed";
+            std::array<char,MSG_SIZE> msg;
+            (void)snprintf(msg.data(),msg.size(),"Error: socket() failed: %d",errno);
+            ret.m_msg = msg.data();
 #endif
             return ret;
         }
@@ -109,7 +115,9 @@ public:
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: setsockopt(SO_REUSEADDR) failed: errno {}", errno);
 #else
-            ret.m_msg = "setsockopt(SO_REUSEADDR) failed";
+            std::array<char,MSG_SIZE> msg;
+            (void)snprintf(msg.data(),msg.size(),"Error: setsockopt(SO_REULSEADDR) failed: %d",errno);
+            ret.m_msg = msg.data();
 #endif
             return ret;
         }
@@ -120,7 +128,9 @@ public:
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: setsockopt(SO_RCVBUF) failed: errno {}", errno);
 #else
-            ret.m_msg = "setsockopt(SO_RCVBUF) failed";
+            std::array<char,MSG_SIZE> msg;
+            (void)snprintf(msg.data(),msg.size(),"Error: setsockopt(SO_RCVBUF) failed: %d",errno);
+            ret.m_msg = msg.data();
 #endif
             return ret;
         }
@@ -131,7 +141,9 @@ public:
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: setsockopt(SO_SNDBUF) failed: errno {}", errno);
 #else
-            ret.m_msg = "setsockopt(SO_SNDBUF) failed";
+            std::array<char,MSG_SIZE> msg;
+            (void)snprintf(msg.data(),msg.size(),"Error: setsockopt(SO_SNDBUF) failed: %d",errno);
+            ret.m_msg = msg.data();
 #endif
             return ret;
         }
@@ -146,7 +158,9 @@ public:
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: bind() failed: errno {}", errno);
 #else
-            ret.m_msg = "bind() failed";
+            std::array<char,MSG_SIZE> msg;
+            (void)snprintf(msg.data(),msg.size(),"Error: bind() failed: %d",errno);
+            ret.m_msg = msg.data();
 #endif
             return ret;
         }
@@ -169,7 +183,9 @@ public:
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: setsockopt(IP_ADD_MEMBERSHIP) failed: errno {}", errno);
 #else
-            ret.m_msg = "setsockopt(IP_ADD_MEMBERSHIP) failed";
+            std::array<char,MSG_SIZE> msg;
+            (void)snprintf(msg.data(),msg.size(),"Error: setsockopt(IP_ADD_MEMBERSHIP) failed: %d",errno);
+            ret.m_msg = msg.data();
 #endif
             return ret;
         }
@@ -196,7 +212,9 @@ public:
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: Socket initialization failed: {}", result);
 #else
-            ret.m_msg = "Error: Socket initialization failed";
+            std::array<char,MSG_SIZE> msg;
+            (void)snprintf(msg.data(),msg.size(),"Error: Socket initialization failed: %d",result);
+            ret.m_msg = msg.data();
 #endif
             ret.m_success = false;
             return ret;
@@ -209,7 +227,9 @@ public:
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Failed to resolve hostname {}", remoteAddr);
 #else
-            ret.m_msg = "Failed to resolve hostname";
+            std::array<char,MSG_SIZE> msg;
+            (void)snprintf(msg.data(),msg.size(),"Failed to resolve hostname %s",remoteAddr);
+            ret.m_msg = msg.data();
 #endif
             return ret;
         }
@@ -233,7 +253,9 @@ public:
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: Socket initialization failed: {}", result);
 #else
-            ret.m_msg = "Error: Socket initialization failed";
+            std::array<char,MSG_SIZE> msg;
+            (void)snprintf(msg.data(),msg.size(),"Error: Socket initialization failed: %d",result);
+            ret.m_msg = msg.data();
 #endif
             ret.m_success = false;
             return ret;
@@ -256,7 +278,9 @@ public:
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: setsockopt(SO_REUSEADDR) failed: errno {}", errno);
 #else
-            ret.m_msg = "setsockopt(SO_REUSEADDR) failed";
+            std::array<char,MSG_SIZE> msg;
+            (void)snprintf(msg.data(),msg.size(),"Error: setsockopt(SO_REUSEADDR) failed: errno %d", errno);
+            ret.m_msg = msg.data();
 #endif
             return ret;
         }
@@ -268,7 +292,9 @@ public:
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: setsockopt(SO_RCVBUF) failed: errno {}", errno);
 #else
-            ret.m_msg = "setsockopt(SO_RCVBUF) failed";
+            std::array<char,MSG_SIZE> msg;
+            (void)snprintf(msg.data(),msg.size(),"Error: setsockopt(SO_RCVBUF) failed: errno %d", errno);
+            ret.m_msg = msg.data();
 #endif
             return ret;
         }
@@ -279,7 +305,9 @@ public:
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: setsockopt(SO_SNDBUF) failed: errno {}", errno);
 #else
-            ret.m_msg = "setsockopt(SO_SNDBUF) failed";
+            std::array<char,MSG_SIZE> msg;
+            (void)snprintf(msg.data(),msg.size(),"Error: setsockopt(SO_SNDBUF) failed: errno %d", errno);
+            ret.m_msg = msg.data();
 #endif
             return ret;
         }
@@ -294,7 +322,9 @@ public:
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: bind() failed: errno {}", errno);
 #else
-            ret.m_msg = "bind() failed";
+            std::array<char,MSG_SIZE> msg;
+            (void)snprintf(msg.data(),msg.size(),"Error: bind() failed: %d", errno);
+            ret.m_msg = msg.data();
 #endif
             return ret;
         }
@@ -320,9 +350,11 @@ public:
             if (numBytesSent < 0) {  // send failed
                 ret.m_success = false;
 #if defined(FMT_SUPPORT)
-                ret.m_msg = fmt::format("Error: errno {}", errno);
+                ret.m_msg = fmt::format("Error: sendto() failed: {}", errno);
 #else
-                ret.m_msg = strerror(errno);
+                std::array<char,MSG_SIZE> msg;
+               (void)snprintf(msg.data(),msg.size(),"Error: sendto() failed: %d",errno);
+                ret.m_msg = msg.data();
 #endif
                 return ret;
             }
@@ -331,9 +363,9 @@ public:
 #if defined(FMT_SUPPORT)
                 ret.m_msg = fmt::format("Only {} bytes of {} was sent to client", numBytesSent, size);
 #else
-                char msg[100];
-                (void)snprintf(msg, sizeof(msg), "Only %ld bytes out of %lu was sent to client", numBytesSent, size);
-                ret.m_msg = msg;
+                std::array<char,MSG_SIZE> msg;
+                (void)snprintf(msg.data(), msg.size(), "Only %ld bytes out of %lu was sent to client", numBytesSent, size);
+                ret.m_msg = msg.data();
 #endif
                 return ret;
             }
@@ -344,8 +376,6 @@ public:
 
     /**
      * @brief Shutdown the UDP socket
-     *
-     * @return SocketRet - indication that the UDP socket was shut down successfully
      */
     void finish() {
         m_stop.store(true);
@@ -353,7 +383,7 @@ public:
             try {
                 m_thread.join();
             }
-            catch (std::exception &e) {
+            catch (...) {
             }
         }
         if (m_fd != INVALID_SOCKET) {

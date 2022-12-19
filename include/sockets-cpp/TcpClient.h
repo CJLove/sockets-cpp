@@ -11,12 +11,7 @@
 #include <cstring>
 #include <iostream>
 #ifdef _WIN32
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif  // WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <winsock2.h>
-#include <ws2tcpip.h>
+
 #else
 #include <arpa/inet.h>
 #include <netdb.h>
@@ -34,6 +29,8 @@
 namespace sockets {
 
 constexpr size_t MAX_PACKET_SIZE = 65536;
+
+constexpr uint32_t MSG_SIZE = 100;
 
 /**
  * @brief TcpClient encapsulates a TCP client socket connection to a server
@@ -90,7 +87,9 @@ public:
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: Socket initializatio failed: {}", result);
 #else
-            ret.m_msg = "Socket initialization failed";
+            std::array<char,MSG_SIZE> msg;
+            (void)snprintf(msg.data(),msg.size(),"Error: Socket initialization failed: %d",result);
+            ret.m_msg = msg.data();
 #endif
             ret.m_success = false;
             return ret;
@@ -102,7 +101,9 @@ public:
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: Failed to create socket: errno {}", errno);
 #else
-            ret.m_msg = "Error: failed to create socket";
+            std::array<char,MSG_SIZE> msg;
+            (void)snprintf(msg.data(),msg.size(),"Error: Failed to create socket: %d",errno);
+            ret.m_msg = msg.data();
 #endif
             return ret;
         }
@@ -114,7 +115,9 @@ public:
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: setsockopt(SO_RCVBUF) failed: errno {}", errno);
 #else
-            ret.m_msg = "setsockopt(SO_REUSEADDR) failed";
+            std::array<char,MSG_SIZE> msg;
+            (void)snprintf(msg.data(),msg.size(),"Error: setsockopt(SO_REUSEADDR) failed: %d", errno);
+            ret.m_msg = msg.data();
 #endif
             return ret;
         }
@@ -125,7 +128,9 @@ public:
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: setsockopt(SO_SNDBUF) failed: errno {}", errno);
 #else
-            ret.m_msg = "setsockopt(SO_REUSEADDR) failed";
+            std::array<char,MSG_SIZE> msg;
+            (void)snprintf(msg.data(),msg.size(),"Error: setsockopt(SO_SNDBUF) failed: %d", errno);
+            ret.m_msg = msg.data();
 #endif
             return ret;
         }
@@ -134,7 +139,9 @@ public:
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Failed to resolve hostname {}", remoteIp);
 #else
-            ret.m_msg = "Failed to resolve hostname";
+            std::array<char,MSG_SIZE> msg;
+            (void)snprintf(msg.data(),msg.size(),"Failed to resolve hostname %s",remoteIp);
+            ret.m_msg = msg.data();
 #endif
             return ret;
             //        }
@@ -148,7 +155,9 @@ public:
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: connect() failed errno {}", errno);
 #else
-            ret.m_msg = "Error: connect() failed";
+            std::array<char,MSG_SIZE> msg;
+            (void)snprintf(msg.data(),msg.size(),"Error: connect() failed errno %d",errno);
+            ret.m_msg = msg.data();
 #endif
             return ret;
         }
@@ -172,7 +181,9 @@ public:
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: send() failed errno {}", errno);
 #else
-            ret.m_msg = "Error: send() failed";
+            std::array<char,MSG_SIZE> msg;
+            (void)snprintf(msg.data(),msg.size(),"Error: send() failed: %d",errno);
+            ret.m_msg = msg.data();
 #endif
             return ret;
         }
@@ -181,7 +192,9 @@ public:
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: Only {} bytes out of {} sent to client", numBytesSent, size);
 #else
-            ret.m_msg = "Error: not all bytes sent to client";
+            std::array<char,MSG_SIZE> msg;
+            (void)snprintf(msg.data(), msg.size(), "Only %ld bytes out of %lu was sent to client", numBytesSent, size);
+            ret.m_msg = msg.data();
 #endif
             return ret;
         }
@@ -191,15 +204,13 @@ public:
 
     /**
      * @brief Shut down the TCP client
-     *
-     * @return SocketRet - indication of whether the client was shut down successfully
      */
     void finish() {
         m_stop.store(true);
         if (m_thread.joinable()) {
             try {
                 m_thread.join();
-            } catch (std::exception &e) { }
+            } catch (...) { }
         }
         if (m_sockfd != INVALID_SOCKET) {
             m_socketCore.Close(m_sockfd);
@@ -261,7 +272,9 @@ private:
 #if defined(FMT_SUPPORT)
                         ret.m_msg = fmt::format("Error: recv() failed errno {}", errno);
 #else
-                        ret.m_msg = "Error: recv() failed";
+                        std::array<char,MSG_SIZE> errMsg;
+                        (void)snprintf(errMsg.data(),errMsg.size(),"Error: recv() failed: %d",errno);
+                        ret.m_msg = errMsg.data();
 #endif
                     }
                     publishDisconnected(ret);
