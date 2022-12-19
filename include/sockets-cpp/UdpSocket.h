@@ -58,7 +58,14 @@ public:
      *
      */
     ~UdpSocket() {
-        finish();
+        m_stop.store(true);
+        if (m_thread.joinable()) {
+            try {
+                m_thread.join();
+            }
+            catch (std::exception &e) {
+            }
+        }
     }
 
     UdpSocket &operator=(const UdpSocket &) = delete;
@@ -164,7 +171,7 @@ public:
         // use setsockopt() to request that the kernel join a multicast group
         //
         struct ip_mreq mreq { };
-        mreq.imr_multiaddr.s_addr = inet_addr(mcastAddr);
+        mreq.imr_multiaddr.s_addr = inet_pton(AF_INET,mcastAddr,nullptr); // inet_addr(mcastAddr);
         mreq.imr_interface.s_addr = htonl(INADDR_ANY);
         if (m_socketCore.SetSockOpt(m_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, reinterpret_cast<char *>(&mreq), sizeof(mreq)) < 0) {
             ret.m_success = false;
@@ -345,11 +352,21 @@ public:
      * @return SocketRet - indication that the UDP socket was shut down successfully
      */
     SocketRet finish() {
+        SocketRet ret;
         m_stop.store(true);
         if (m_thread.joinable()) {
-            m_thread.join();
+            try {
+                m_thread.join();
+            }
+            catch (std::exception &e) {
+                ret.m_success = false;
+#if defined(FMT_SUPPORT)
+            ret.m_msg = fmt::format("Error: exception in std::thread::join(): {}",e.what());
+#else
+#endif
+                return ret;
+            }
         }
-        SocketRet ret;
         if (m_fd != INVALID_SOCKET) {
             if (m_socketCore.Close(m_fd) == -1) {  // close failed
                 ret.m_success = false;

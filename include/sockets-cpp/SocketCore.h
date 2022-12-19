@@ -84,7 +84,7 @@ public:
 
     ssize_t Recv(int sockfd, void *buf, size_t len, int flags) {
 #ifdef _WIN32
-        return ::recv(sockfd, reinterpret_cast<char*>(buf), len, flags);
+        return ::recv(sockfd, reinterpret_cast<char*>(buf), static_cast<int>(len), flags);
 #else
         return ::recv(sockfd, buf, len, flags);
 #endif
@@ -92,7 +92,7 @@ public:
 
     ssize_t SendTo(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen) {
 #ifdef _WIN32
-        return ::sendto(sockfd, reinterpret_cast<const char*>(buf), len, flags, dest_addr, addrlen);
+        return ::sendto(sockfd, reinterpret_cast<const char*>(buf), static_cast<int>(len), flags, dest_addr, addrlen);
 #else
         return ::sendto(sockfd, buf, len, flags, dest_addr, addrlen);
 #endif
@@ -100,7 +100,7 @@ public:
 
     ssize_t Send(int sockfd, const void *buf, size_t len, int flags) {
 #ifdef _WIN32
-        return ::send(sockfd, reinterpret_cast<const char*>(buf), len, flags);
+        return ::send(sockfd, reinterpret_cast<const char*>(buf), static_cast<int>(len), flags);
 #else        
         return ::send(sockfd, buf, len, flags);
 #endif        

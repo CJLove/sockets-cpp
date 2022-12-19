@@ -62,7 +62,14 @@ public:
      * @brief Destroy the Tcp Client object
      */
     ~TcpClient() {
-        finish();
+        m_stop.store(true);
+        if (m_thread.joinable()) {
+            try {
+                m_thread.join();
+            }
+            catch (std::exception &e) {               
+            }
+        }
     }
 
     TcpClient &operator=(const TcpClient &) = delete;
@@ -200,11 +207,22 @@ public:
      * @return SocketRet - indication of whether the client was shut down successfully
      */
     SocketRet finish() {
+        SocketRet ret;
+
         m_stop.store(true);
         if (m_thread.joinable()) {
-            m_thread.join();
+            try {
+                m_thread.join();
+            }
+            catch (std::exception &e) {
+                ret.m_success = false;
+#if defined(FMT_SUPPORT)
+            ret.m_msg = fmt::format("Error: exception in std::thread::join(): {}",e.what());
+#else
+#endif
+                return ret;                
+            }
         }
-        SocketRet ret;
         if (m_sockfd != INVALID_SOCKET) {
             if (m_socketCore.Close(m_sockfd) == -1) {  // close failed
                 ret.m_success = false;

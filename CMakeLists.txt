@@ -112,7 +112,7 @@ endif()
 #---------------------------------------------------------------------------------------
 if (FMT_SUPPORT)
   # Fmt
-  find_package(fmt 8.0.1 REQUIRED)
+  find_package(fmt 8.0.1 CONFIG REQUIRED)
 
   add_definitions(-DFMT_SUPPORT)
 endif(FMT_SUPPORT)

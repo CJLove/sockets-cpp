@@ -69,7 +69,15 @@ public:
      * @brief Shutdown and destroy the TCP Server object
      */
     ~TcpServer() {
-        finish();
+        m_stop = true;
+        if (m_thread.joinable()) {
+            m_stop = true;
+            try {
+                m_thread.join();
+            }
+            catch (std::exception &e) {               
+            }
+        }
     }
 
     TcpServer &operator=(const TcpServer &) = delete;
@@ -273,7 +281,17 @@ public:
         m_stop = true;
         if (m_thread.joinable()) {
             m_stop = true;
-            m_thread.join();
+            try {
+                m_thread.join();
+            }
+            catch (std::exception &e) {
+                ret.m_success = false;
+#if defined(FMT_SUPPORT)
+            ret.m_msg = fmt::format("Error: exception in std::thread::join(): {}",e.what());
+#else
+#endif
+                return ret;                
+            }
         }
 
         // Close client sockets
