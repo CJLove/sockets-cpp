@@ -1,6 +1,10 @@
 #include "TcpServer.h"
 #include <set>
-#include <unistd.h>
+#ifdef _WIN32
+    #include "getopt.h"
+#else
+    #include <unistd.h>
+#endif
 
 class ServerApp {
 public:

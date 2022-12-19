@@ -90,7 +90,7 @@ public:
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: WSAStartup() failed: {}", result);
 #else
-            ret.m_msg = "WSAStartup() failed";
+            ret.m_sg = "WSAStartup() failed";
 #endif
             ret.m_success = false;
             return ret;

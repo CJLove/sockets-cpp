@@ -3,7 +3,6 @@
 #include "AddrLookup.h"
 #include "SocketCommon.h"
 #include "SocketCore.h"
-#include <arpa/inet.h>
 #include <array>
 #include <atomic>
 #include <cerrno>
@@ -11,12 +10,22 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
+#ifdef _WIN32
+    #ifndef WIN32_LEAN_AND_MEAN
+        #define WIN32_LEAN_AND_MEAN
+    #endif // WIN32_LEAN_AND_MEAN
+    #include <winsock2.h>
+    #include <windows.h>
+    #include <ws2tcpip.h>
+#else
+    #include <arpa/inet.h>
+    #include <netdb.h>
+    #include <netinet/in.h>
+    #include <sys/socket.h>
+    #include <unistd.h>
+#endif
 #include <sys/types.h>
 #include <thread>
-#include <unistd.h>
 #include <vector>
 #if defined(FMT_SUPPORT)
 #include <fmt/core.h>
@@ -75,6 +84,22 @@ public:
     SocketRet connectTo(const char *remoteIp, uint16_t remotePort) {
         m_sockfd = 0;
         SocketRet ret;
+
+#ifdef _WIN32
+        int result;
+
+        // Initialize Winsock
+        result = WSAStartup(MAKEWORD(2,2), &m_wsaData);
+        if (result != 0) {
+#if defined(FMT_SUPPORT)
+            ret.m_msg = fmt::format("Error: WSAStartup() failed: {}", result);
+#else
+            ret.m_msg = "WSAStartup() failed";
+#endif
+            ret.m_success = false;
+            return ret;
+        }
+#endif
 
         m_sockfd = m_socketCore.Socket(AF_INET, SOCK_STREAM, 0);
         if (m_sockfd == -1) {  // socket failed
@@ -159,7 +184,11 @@ public:
         }
         if (static_cast<size_t>(numBytesSent) < size) {  // not all bytes were sent
             ret.m_success = false;
+#if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: Only {} bytes out of {} sent to client", numBytesSent, size);
+#else
+            ret.m_msg = "Error: not all bytes sent to client";
+#endif
             return ret;
         }
         ret.m_success = true;
@@ -297,6 +326,10 @@ private:
      * @brief Helper for hostname resolution
      */
     AddrLookup<SocketImpl> m_addrLookup;
+
+#ifdef _WIN32
+    WSADATA  m_wsaData;
+#endif
 };
 
 }  // Namespace sockets

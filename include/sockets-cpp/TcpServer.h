@@ -1,7 +1,7 @@
 #pragma once
 #include "SocketCommon.h"
 #include "SocketCore.h"
-#include <arpa/inet.h>
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <cerrno>
@@ -11,12 +11,22 @@
 #include <functional>
 #include <iostream>
 #include <mutex>
-#include <netinet/in.h>
+#ifdef _WIN32
+    #ifndef WIN32_LEAN_AND_MEAN
+        #define WIN32_LEAN_AND_MEAN
+    #endif // WIN32_LEAN_AND_MEAN
+    #include <winsock2.h>
+    #include <windows.h>
+    #include <ws2tcpip.h>
+#else
+    #include <arpa/inet.h>
+    #include <netinet/in.h>
+    #include <sys/socket.h>
+    #include <unistd.h>
+#endif
 #include <string>
-#include <sys/socket.h>
 #include <sys/types.h>
 #include <thread>
-#include <unistd.h>
 #include <unordered_map>
 #if defined(FMT_SUPPORT)
 #include <fmt/core.h>
@@ -79,6 +89,22 @@ public:
      */
     SocketRet start(uint16_t port) {
         SocketRet ret;
+
+#ifdef _WIN32
+        int result;
+
+        // Initialize Winsock
+        result = WSAStartup(MAKEWORD(2,2), &m_wsaData);
+        if (result != 0) {
+#if defined(FMT_SUPPORT)
+            ret.m_msg = fmt::format("Error: WSAStartup() failed: {}", result);
+#else
+            ret.m_msg = "WSAStartup() failed";
+#endif
+            ret.m_success = false;
+            return ret;
+        }
+#endif
 
         m_sockfd = m_socketCore.Socket(AF_INET, SOCK_STREAM, 0);
         if (m_sockfd == -1) {  // socket failed
@@ -429,7 +455,7 @@ private:
     int findMaxFd() {
         int maxfd = m_sockfd;
         for (const auto &client : m_clients) {
-            maxfd = std::max(maxfd, client.second.m_sockfd);
+            maxfd = std::max<int>(maxfd, client.second.m_sockfd);
         }
         return maxfd + 1;
     }
@@ -551,6 +577,10 @@ private:
      * @brief Interface for socket calls
      */
     SocketImpl m_socketCore;
+
+#ifdef _WIN32
+    WSADATA  m_wsaData;
+#endif
 };
 
 }  // Namespace sockets
