@@ -1,4 +1,3 @@
-[![Build Status](https://travis-ci.com/CJLove/sockets-cpp.svg?branch=master)](https://travis-ci.com/CJLove/sockets-cpp)
 
 # sockets-cpp
 

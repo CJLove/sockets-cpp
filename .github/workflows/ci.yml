@@ -1,0 +1,89 @@
+name: ci
+
+on: [push, pull_request]
+
+jobs:
+  build_linux:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      matrix:
+        config:
+#          - { compiler: gcc, version: 8, build_type: Debug, cppstd: 14 }
+#          - { compiler: gcc, version: 9, build_type: Release, cppstd: 17 }
+          - { compiler: gcc, version: 10, build_type: Release, cppstd: 17 }
+          - { compiler: gcc, version: 11, build_type: Debug, cppstd: 20 }
+          - { compiler: gcc, version: 12, build_type: Release, cppstd: 20 }
+          - { compiler: clang, version: 10, build_type: Release, cppstd: 14 }
+          - { compiler: clang, version: 10, build_type: Debug, cppstd: 17 }
+          - { compiler: clang, version: 12, build_type: Debug, cppstd: 17 }
+          - { compiler: clang, version: 15, build_type: Release, cppstd: 20 }
+    container:
+      image: ${{ matrix.config.compiler == 'clang' && 'teeks99/clang-ubuntu' || matrix.config.compiler }}:${{ matrix.config.version }}
+    name: "${{ matrix.config.compiler}} ${{ matrix.config.version }} (C++${{ matrix.config.cppstd }}, ${{ matrix.config.build_type }})"
+    steps:
+      - uses: actions/checkout@main
+      - name: Setup
+        run: |
+          apt-get update && apt-get install -y curl
+          CMAKE_VERSION="3.24.2"
+          curl -sSL https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.sh -o install-cmake.sh
+          chmod +x install-cmake.sh
+          ./install-cmake.sh --prefix=/usr/local --skip-license
+      - name: Setup Compiler
+        if: matrix.config.compiler == 'clang'
+        run: |
+          if [[ "${{ matrix.config.version }}" -ge 4 ]]; then
+            scripts/ci_setup_clang.sh "${{ matrix.config.version }}"
+            echo "CXXFLAGS=-stdlib=libc++" >> $GITHUB_ENV
+          fi
+          echo "CC=clang-${{ matrix.config.version }}" >> $GITHUB_ENV
+          echo "CXX=clang++-${{ matrix.config.version }}" >> $GITHUB_ENV
+      - name: Setup fmt
+        run: |
+          curl -sSL https://github.com/fmtlib/fmt/archive/refs/tags/8.0.1.tar.gz -o /tmp/fmtlib.tar.gz
+          tar zxf /tmp/fmtlib.tar.gz
+          pushd fmt-8.0.1
+          mkdir build 
+          cd build
+          cmake -DFMT_TEST=OFF -DBUILD_SHARED_LIBS=ON ..
+          make install
+          popd 
+      - name: Build
+        run: |
+          mkdir -p build && cd build
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
+            -DCMAKE_CXX_STANDARD=${{ matrix.config.cppstd }} \
+            -DBUILD_EXAMPLES=${{ matrix.config.examples || 'ON' }} \
+            -DBUILD_TESTS=ON \
+          make -j2
+          ctest -j2 --output-on-failure
+
+  build_osx:
+    runs-on: macOS-latest
+    name: "OS X Clang (C++14, Release)"
+    steps:
+      - uses: actions/checkout@main
+      - name: Setup fmt
+        run: |
+          curl -sSL https://github.com/fmtlib/fmt/archive/refs/tags/8.0.1.tar.gz -o /tmp/fmtlib.tar.gz
+          tar zxf /tmp/fmtlib.tar.gz
+          pushd fmt-8.0.1
+          mkdir build 
+          cd build
+          cmake -DFMT_TEST=OFF -DBUILD_SHARED_LIBS=ON ..
+          make install
+          popd 
+      - name: Build
+        run: |
+          mkdir -p build && cd build
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_STANDARD=14 \
+            -DBUILD_EXAMPLES=ON \
+            -DBUILD_TESTS=ON
+          make -j2
+          ctest -j2 --output-on-failure
