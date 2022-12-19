@@ -82,7 +82,7 @@ public:
      * @return SocketRet - indication of whether the client connection was established
      */
     SocketRet connectTo(const char *remoteIp, uint16_t remotePort) {
-        m_sockfd = 0;
+        m_sockfd = INVALID_SOCKET;
         SocketRet ret;
 
 #ifdef _WIN32
@@ -102,7 +102,7 @@ public:
 #endif
 
         m_sockfd = m_socketCore.Socket(AF_INET, SOCK_STREAM, 0);
-        if (m_sockfd == -1) {  // socket failed
+        if (m_sockfd == INVALID_SOCKET) {  // socket failed
             ret.m_success = false;
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: Failed to create socket: errno {}", errno);
@@ -149,7 +149,6 @@ public:
 
         int connectRet = m_socketCore.Connect(m_sockfd, reinterpret_cast<struct sockaddr *>(&m_server), sizeof(m_server));
         if (connectRet == -1) {
-            m_sockfd = 0;
             ret.m_success = false;
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: connect() failed errno {}", errno);
@@ -206,7 +205,7 @@ public:
             m_thread.join();
         }
         SocketRet ret;
-        if (m_sockfd != -1) {
+        if (m_sockfd != INVALID_SOCKET) {
             if (m_socketCore.Close(m_sockfd) == -1) {  // close failed
                 ret.m_success = false;
 #if defined(FMT_SUPPORT)
@@ -217,7 +216,7 @@ public:
                 return ret;
             }
         }
-        m_sockfd = -1;
+        m_sockfd = INVALID_SOCKET;
         ret.m_success = true;
         return ret;
     }
@@ -290,7 +289,7 @@ private:
     /**
      * @brief The socket file descriptor
      */
-    int m_sockfd = -1;
+    SOCKET m_sockfd = INVALID_SOCKET;
 
     /**
      * @brief Indicator that the receive thread should stop

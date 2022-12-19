@@ -26,6 +26,9 @@ namespace sockets {
 #ifdef _WIN32
 using ssize_t = int;
 using in_addr_t = ULONG;
+#else
+using SOCKET = int;
+constexpr SOCKET INVALID_SOCKET = -1;
 #endif
 
 /**
@@ -39,11 +42,11 @@ public:
 
     ~SocketCore() = default;
 
-    int Socket(int domain, int type, int protocol) {
+    SOCKET Socket(int domain, int type, int protocol) {
         return ::socket(domain, type, protocol);
     }
 
-    int SetSockOpt(int sockfd, int level, int optname, void * optval, socklen_t optlen) {
+    int SetSockOpt(SOCKET sockfd, int level, int optname, void * optval, socklen_t optlen) {
 #ifdef _WIN32
         return ::setsockopt(sockfd, level, optname, reinterpret_cast<const char*>(optval), optlen);
 #else
@@ -51,23 +54,23 @@ public:
 #endif
     }
 
-    int Bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
+    int Bind(SOCKET sockfd, const struct sockaddr *addr, socklen_t addrlen) {
         return ::bind(sockfd, addr, addrlen);
     }
 
-    int Accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
+    SOCKET Accept(SOCKET sockfd, struct sockaddr *addr, socklen_t *addrlen) {
         return ::accept(sockfd, addr, addrlen);
     }
 
-    int Listen(int sockfd, int backlog) {
+    int Listen(SOCKET sockfd, int backlog) {
         return ::listen(sockfd, backlog);
     }
 
-    int Connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
+    int Connect(SOCKET sockfd, const struct sockaddr *addr, socklen_t addrlen) {
         return ::connect(sockfd, addr, addrlen);
     }
 
-    int Close(int sockfd) {
+    int Close(SOCKET sockfd) {
 #ifdef _WIN32
         return ::closesocket(sockfd);
 #else

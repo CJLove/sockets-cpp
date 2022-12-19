@@ -90,14 +90,14 @@ public:
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: WSAStartup() failed: {}", result);
 #else
-            ret.m_sg = "WSAStartup() failed";
+            ret.m_msg = "WSAStartup() failed";
 #endif
             ret.m_success = false;
             return ret;
         }
 #endif
         m_fd = m_socketCore.Socket(AF_INET, SOCK_DGRAM, 0);
-        if (m_fd < 0) {
+        if (m_fd == INVALID_SOCKET) {
             ret.m_success = false;
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: socket() failed: errno {}", errno);
@@ -158,7 +158,7 @@ public:
         // store the multicast group address for use by send()
         memset(&m_sockaddr, 0, sizeof(sockaddr));
         m_sockaddr.sin_family = AF_INET;
-        m_sockaddr.sin_addr.s_addr = inet_addr(mcastAddr);
+        m_sockaddr.sin_addr.s_addr = inet_pton(AF_INET,mcastAddr,nullptr); // inet_addr(mcastAddr);
         m_sockaddr.sin_port = htons(port);
 
         // use setsockopt() to request that the kernel join a multicast group
@@ -237,7 +237,7 @@ public:
         SocketRet ret;
 
         m_fd = m_socketCore.Socket(AF_INET, SOCK_DGRAM, 0);
-        if (m_fd < 0) {
+        if (m_fd == INVALID_SOCKET) {
             ret.m_success = false;
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: socket() failed: errno {}", errno);
@@ -329,7 +329,7 @@ public:
                 ret.m_msg = fmt::format("Only {} bytes of {} was sent to client", numBytesSent, size);
 #else
                 char msg[100];
-                snprintf(msg, sizeof(msg), "Only %ld bytes out of %lu was sent to client", numBytesSent, size);
+                (void)snprintf(msg, sizeof(msg), "Only %ld bytes out of %lu was sent to client", numBytesSent, size);
                 ret.m_msg = msg;
 #endif
                 return ret;
@@ -350,18 +350,18 @@ public:
             m_thread.join();
         }
         SocketRet ret;
-        if (m_fd != -1) {
+        if (m_fd != INVALID_SOCKET) {
             if (m_socketCore.Close(m_fd) == -1) {  // close failed
                 ret.m_success = false;
 #if defined(FMT_SUPPORT)
                 ret.m_msg = fmt::format("Error: errno {}", errno);
 #else
-                ret.m_msg = strerror(errno);
+                ret.m_msg = strerror(errno); // NOLINT
 #endif
                 return ret;
             }
         }
-        m_fd = -1;
+        m_fd = INVALID_SOCKET;
         ret.m_success = true;
         return ret;
     }
@@ -383,7 +383,7 @@ private:
     void ReceiveTask() {
         constexpr int64_t USEC_DELAY = 500000;
         while (!m_stop.load()) {
-            if (m_fd != -1) {
+            if (m_fd != INVALID_SOCKET) {
                 fd_set fds;
                 struct timeval delay {
                     0, USEC_DELAY
@@ -416,7 +416,7 @@ private:
     /**
      * @brief The socket file descriptor
      */
-    int m_fd = -1;
+    SOCKET m_fd = INVALID_SOCKET;
 
     /**
      * @brief Indicator that the receive thread should exit

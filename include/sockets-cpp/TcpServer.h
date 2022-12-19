@@ -107,7 +107,7 @@ public:
 #endif
 
         m_sockfd = m_socketCore.Socket(AF_INET, SOCK_STREAM, 0);
-        if (m_sockfd == -1) {  // socket failed
+        if (m_sockfd == INVALID_SOCKET) {  // socket failed
             ret.m_success = false;
 #if defined(FMT_SUPPORT)
             ret.m_msg = fmt::format("Error: Socket creation failed errno{}", errno);
@@ -292,7 +292,7 @@ public:
         }
 
         // Close accept socket
-        if (m_sockfd != -1) {
+        if (m_sockfd != INVALID_SOCKET) {
             if (m_socketCore.Close(m_sockfd) == -1) {  // close failed
                 ret.m_success = false;
 #if defined(FMT_SUPPORT)
@@ -303,7 +303,7 @@ public:
                 return ret;
             }
         }
-        m_sockfd = -1;
+        m_sockfd = INVALID_SOCKET;
         m_clients.clear();
         ret.m_success = true;
         return ret;
@@ -346,7 +346,7 @@ private:
         /**
          * @brief The socket file descriptor for the TCP client connection
          */
-        int m_sockfd = -1;
+        SOCKET m_sockfd = INVALID_SOCKET;
 
         /**
          * @brief The peer's port
@@ -365,14 +365,14 @@ private:
          * @param clientFd - file descriptor for the client connection
          * @param port - client's port number
          */
-        Client(SocketImpl *socketImpl, const char *ipAddr, int clientFd, uint16_t port)
+        Client(SocketImpl *socketImpl, const char *ipAddr, SOCKET clientFd, uint16_t port)
             : m_socketCore(socketImpl), m_ip(ipAddr), m_sockfd(clientFd), m_port(port), m_isConnected(true) {
         }
 
         /**
          * @brief Construct a new Client object
          */
-        Client() : m_socketCore(nullptr), m_sockfd(-1), m_port(0), m_isConnected(false) {
+        Client() : m_socketCore(nullptr), m_sockfd(INVALID_SOCKET), m_port(0), m_isConnected(false) {
         }
 
         /**
@@ -384,7 +384,7 @@ private:
          */
         SocketRet sendMsg(const char *msg, size_t size) {
             SocketRet ret;
-            if (m_sockfd != 0) {
+            if (m_sockfd != INVALID_SOCKET) {
                 ssize_t numBytesSent = m_socketCore->Send(m_sockfd, reinterpret_cast<const void *>(msg), size, 0);
                 if (numBytesSent < 0) {  // send failed
                     ret.m_success = false;
@@ -455,7 +455,7 @@ private:
     int findMaxFd() {
         int maxfd = m_sockfd;
         for (const auto &client : m_clients) {
-            maxfd = std::max<int>(maxfd, client.second.m_sockfd);
+            maxfd = std::max<SOCKET>(maxfd, client.second.m_sockfd);
         }
         return maxfd + 1;
     }
@@ -526,7 +526,7 @@ private:
     /**
      * @brief The socket file descriptor used for accepting connections
      */
-    int m_sockfd = -1;
+    SOCKET m_sockfd = INVALID_SOCKET;
 
     /**
      * @brief The server socket address
