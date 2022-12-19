@@ -11,18 +11,18 @@
 #include <cstring>
 #include <iostream>
 #ifdef _WIN32
-    #ifndef WIN32_LEAN_AND_MEAN
-        #define WIN32_LEAN_AND_MEAN
-    #endif // WIN32_LEAN_AND_MEAN
-    #include <winsock2.h>
-    #include <windows.h>
-    #include <ws2tcpip.h>
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif  // WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #else
-    #include <arpa/inet.h>
-    #include <netdb.h>
-    #include <netinet/in.h>
-    #include <sys/socket.h>
-    #include <unistd.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <unistd.h>
 #endif
 #include <sys/types.h>
 #include <thread>
@@ -62,17 +62,7 @@ public:
      * @brief Destroy the Tcp Client object
      */
     ~TcpClient() {
-        m_stop.store(true);
-        if (m_thread.joinable()) {
-            try {
-                m_thread.join();
-            }
-            catch (std::exception &e) {               
-            }
-        }
-        if (m_sockfd != INVALID_SOCKET) {
-            m_socketCore.Close(m_sockfd);
-        }
+        finish();
     }
 
     TcpClient &operator=(const TcpClient &) = delete;
@@ -95,21 +85,16 @@ public:
         m_sockfd = INVALID_SOCKET;
         SocketRet ret;
 
-#ifdef _WIN32
-        int result;
-
-        // Initialize Winsock
-        result = WSAStartup(MAKEWORD(2,2), &m_wsaData);
+        int result = m_socketCore.Initialize();
         if (result != 0) {
 #if defined(FMT_SUPPORT)
-            ret.m_msg = fmt::format("Error: WSAStartup() failed: {}", result);
+            ret.m_msg = fmt::format("Error: Socket initializatio failed: {}", result);
 #else
-            ret.m_msg = "WSAStartup() failed";
+            ret.m_msg = "Socket initialization failed";
 #endif
             ret.m_success = false;
             return ret;
         }
-#endif
 
         m_sockfd = m_socketCore.Socket(AF_INET, SOCK_STREAM, 0);
         if (m_sockfd == INVALID_SOCKET) {  // socket failed
@@ -209,37 +194,17 @@ public:
      *
      * @return SocketRet - indication of whether the client was shut down successfully
      */
-    SocketRet finish() {
-        SocketRet ret;
-
+    void finish() {
         m_stop.store(true);
         if (m_thread.joinable()) {
             try {
                 m_thread.join();
-            }
-            catch (std::exception &e) {
-                ret.m_success = false;
-#if defined(FMT_SUPPORT)
-            ret.m_msg = fmt::format("Error: exception in std::thread::join(): {}",e.what());
-#else
-#endif
-                return ret;                
-            }
+            } catch (std::exception &e) { }
         }
         if (m_sockfd != INVALID_SOCKET) {
-            if (m_socketCore.Close(m_sockfd) == -1) {  // close failed
-                ret.m_success = false;
-#if defined(FMT_SUPPORT)
-                ret.m_msg = fmt::format("Error: close() failed errno {}", errno);
-#else
-                ret.m_msg = "Error: close() failed";
-#endif
-                return ret;
-            }
+            m_socketCore.Close(m_sockfd);
         }
         m_sockfd = INVALID_SOCKET;
-        ret.m_success = true;
-        return ret;
     }
 
 private:
@@ -346,10 +311,6 @@ private:
      * @brief Helper for hostname resolution
      */
     AddrLookup<SocketImpl> m_addrLookup;
-
-#ifdef _WIN32
-    WSADATA  m_wsaData;
-#endif
 };
 
 }  // Namespace sockets

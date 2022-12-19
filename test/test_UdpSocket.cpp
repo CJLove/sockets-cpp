@@ -4,6 +4,7 @@
 #define TEST_CORE_ACCESS
 #include "UdpSocket.h"
 #include <string>
+#include <thread>
 #include <iostream>
 
 using ::testing::AtLeast;
@@ -185,9 +186,8 @@ TEST(UdpSocket,unicast_start_stop)
     auto ret = app.m_socket.startUnicast(5000);
     EXPECT_EQ(true,ret.m_success);
 
-    sleep(1);
-    ret = app.m_socket.finish();
-    EXPECT_EQ(true,ret.m_success);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    app.m_socket.finish();
 }
 
 TEST(UdpSocket,mcast_start_stop)
@@ -203,9 +203,8 @@ TEST(UdpSocket,mcast_start_stop)
     auto ret = app.m_socket.startMcast("224.0.0.1",5000);
     EXPECT_EQ(true,ret.m_success);
 
-    sleep(1);
-    ret = app.m_socket.finish();
-    EXPECT_EQ(true,ret.m_success);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    app.m_socket.finish();
 }
 
 TEST(UdpSocket,finish_close_failure)
@@ -216,14 +215,13 @@ TEST(UdpSocket,finish_close_failure)
     EXPECT_CALL(core, Socket(_,_,_)).WillOnce(Return(4));
     EXPECT_CALL(core, SetSockOpt(_,_,_,_,_)).WillOnce(Return(0)).WillOnce(Return(0)).WillOnce(Return(0));
     EXPECT_CALL(core,Bind(_,_,_)).WillOnce(Return(0));
-    EXPECT_CALL(core, Close(_)).WillOnce(Return(-1)).WillOnce(Return(-1));
+    EXPECT_CALL(core, Close(_)).WillOnce(Return(-1));
     EXPECT_CALL(core, Select(_,_,_,_,_)).WillRepeatedly(Return(0));
     auto ret = app.m_socket.startUnicast(5000);
     EXPECT_EQ(true,ret.m_success);
 
-    sleep(1);
-    ret = app.m_socket.finish();
-    EXPECT_EQ(false,ret.m_success);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    app.m_socket.finish();
 }
 
 TEST(UdpSocket,unicast_lookup_fail)
@@ -255,9 +253,8 @@ TEST(UdpSocket,unicast_lookup_success)
     auto ret = app.m_socket.startUnicast("localhost",5000,5001);
     EXPECT_EQ(true,ret.m_success);
 
-    sleep(1);
-    ret = app.m_socket.finish();
-    EXPECT_EQ(true,ret.m_success);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    app.m_socket.finish();
 }
 
 TEST(UdpSocket,unicast_receive_data)
@@ -279,9 +276,8 @@ TEST(UdpSocket,unicast_receive_data)
     auto ret = app.m_socket.startUnicast(5000);
     EXPECT_EQ(true,ret.m_success);
 
-    sleep(1);
-    ret = app.m_socket.finish();
-    EXPECT_EQ(true,ret.m_success);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    app.m_socket.finish();
 
     EXPECT_EQ(app.m_receiveData,"Received Data");
 }
@@ -309,9 +305,8 @@ TEST(UdpSocket,send_msg_fail)
     ret = app.m_socket.sendMsg("test message",11);
     EXPECT_EQ(false,ret.m_success);
 
-    sleep(1);
-    ret = app.m_socket.finish();
-    EXPECT_EQ(true,ret.m_success);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    app.m_socket.finish();
 }
 
 TEST(UdpSocket,send_msg_partial)
@@ -337,9 +332,8 @@ TEST(UdpSocket,send_msg_partial)
     ret = app.m_socket.sendMsg("test message",11);
     EXPECT_EQ(false,ret.m_success);
 
-    sleep(1);
-    ret = app.m_socket.finish();
-    EXPECT_EQ(true,ret.m_success);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    app.m_socket.finish();
 }
 
 TEST(UdpSocket,send_msg)
@@ -365,7 +359,6 @@ TEST(UdpSocket,send_msg)
     ret = app.m_socket.sendMsg("test message",11);
     EXPECT_EQ(true,ret.m_success);
 
-    sleep(1);
-    ret = app.m_socket.finish();
-    EXPECT_EQ(true,ret.m_success);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    app.m_socket.finish();
 }

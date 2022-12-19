@@ -3,6 +3,7 @@
 #define TEST_CORE_ACCESS
 #include "TcpClient.h"
 #include "MockSocketCore.h"
+#include <thread>
 
 using ::testing::AtLeast;
 using ::testing::Return;
@@ -130,9 +131,8 @@ TEST(TcpClientSocket,tcp_connect)
     auto ret = app.m_socket.connectTo("localhost",5000);
     EXPECT_EQ(true,ret.m_success);
 
-    sleep(1);
-    ret = app.m_socket.finish();
-    EXPECT_EQ(true,ret.m_success);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    app.m_socket.finish();
 }
 
 TEST(TcpClientSocket,tcp_finish_fail)
@@ -148,13 +148,12 @@ TEST(TcpClientSocket,tcp_finish_fail)
     EXPECT_CALL(core, FreeAddrInfo(_));
     EXPECT_CALL(core, Connect(_,_,_)).WillOnce(Return(0));
     EXPECT_CALL(core, Select(_,_,_,_,_)).WillRepeatedly(Return(0));
-    EXPECT_CALL(core, Close(_)).WillOnce(Return(-1)).WillOnce(Return(-1));
+    EXPECT_CALL(core, Close(_)).WillOnce(Return(-1));
     auto ret = app.m_socket.connectTo("localhost",5000);
     EXPECT_EQ(true,ret.m_success);
 
-    sleep(1);
-    ret = app.m_socket.finish();
-    EXPECT_EQ(false,ret.m_success);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    app.m_socket.finish();
 }
 
 TEST(TcpClientSocket,tcp_send_fail)
@@ -178,9 +177,8 @@ TEST(TcpClientSocket,tcp_send_fail)
     ret = app.m_socket.sendMsg("Message Data",12);
     EXPECT_EQ(false,ret.m_success);
 
-    sleep(1);
-    ret = app.m_socket.finish();
-    EXPECT_EQ(true,ret.m_success);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    app.m_socket.finish();
 }
 
 TEST(TcpClientSocket,tcp_send_partial)
@@ -204,9 +202,8 @@ TEST(TcpClientSocket,tcp_send_partial)
     ret = app.m_socket.sendMsg("Message Data",12);
     EXPECT_EQ(false,ret.m_success);
 
-    sleep(1);
-    ret = app.m_socket.finish();
-    EXPECT_EQ(true,ret.m_success);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    app.m_socket.finish();
 }
 
 TEST(TcpClientSocket,tcp_send_success)
@@ -230,9 +227,8 @@ TEST(TcpClientSocket,tcp_send_success)
     ret = app.m_socket.sendMsg("Message Data",12);
     EXPECT_EQ(true,ret.m_success);
 
-    sleep(1);
-    ret = app.m_socket.finish();
-    EXPECT_EQ(true,ret.m_success);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    app.m_socket.finish();
 }
 
 TEST(TcpClientSocket,tcp_receive)
@@ -259,9 +255,8 @@ TEST(TcpClientSocket,tcp_receive)
     auto ret = app.m_socket.connectTo("localhost",5000);
     EXPECT_EQ(true,ret.m_success);
 
-    sleep(1);
-    ret = app.m_socket.finish();
-    EXPECT_EQ(true,ret.m_success);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    app.m_socket.finish();
 
     EXPECT_EQ(app.m_receiveData,"Received Data");
 }
@@ -290,9 +285,8 @@ TEST(TcpClientSocket,tcp_server_disconnect)
     auto ret = app.m_socket.connectTo("localhost",5000);
     EXPECT_EQ(true,ret.m_success);
 
-    sleep(1);
-    ret = app.m_socket.finish();
-    EXPECT_EQ(true,ret.m_success);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    app.m_socket.finish();
 
     EXPECT_EQ(true,app.m_disconnected);
 }

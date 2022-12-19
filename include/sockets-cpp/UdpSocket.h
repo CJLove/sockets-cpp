@@ -58,17 +58,7 @@ public:
      *
      */
     ~UdpSocket() {
-        m_stop.store(true);
-        if (m_thread.joinable()) {
-            try {
-                m_thread.join();
-            }
-            catch (std::exception &e) {
-            }
-        }
-        if (m_fd != INVALID_SOCKET) {
-            m_socketCore.Close(m_fd);
-        }
+        finish();
     }
 
     UdpSocket &operator=(const UdpSocket &) = delete;
@@ -91,21 +81,17 @@ public:
     SocketRet startMcast(const char *mcastAddr, uint16_t port) {
         SocketRet ret;
 
-#ifdef _WIN32
-        int result;
-
-        // Initialize Winsock
-        result = WSAStartup(MAKEWORD(2,2), &m_wsaData);
+        int result = m_socketCore.Initialize();
         if (result != 0) {
 #if defined(FMT_SUPPORT)
-            ret.m_msg = fmt::format("Error: WSAStartup() failed: {}", result);
+            ret.m_msg = fmt::format("Error: Socket initialization failed: {}", result);
 #else
-            ret.m_msg = "WSAStartup() failed";
+            ret.m_msg = "Socket initialization failed";
 #endif
             ret.m_success = false;
             return ret;
         }
-#endif
+
         m_fd = m_socketCore.Socket(AF_INET, SOCK_DGRAM, 0);
         if (m_fd == INVALID_SOCKET) {
             ret.m_success = false;
@@ -205,21 +191,16 @@ public:
     SocketRet startUnicast(const char *remoteAddr, uint16_t localPort, uint16_t port) {
         SocketRet ret;
 
-#ifdef _WIN32
-        int result;
-
-        // Initialize Winsock
-        result = WSAStartup(MAKEWORD(2,2), &m_wsaData);
+        int result = m_socketCore.Initialize();
         if (result != 0) {
 #if defined(FMT_SUPPORT)
-            ret.m_msg = fmt::format("Error: WSAStartup() failed: {}", result);
+            ret.m_msg = fmt::format("Error: Socket initialization failed: {}", result);
 #else
-            ret.m_msg = "WSAStartup() failed";
+            ret.m_msg = "Error: Socket initialization failed";
 #endif
             ret.m_success = false;
             return ret;
         }
-#endif
 
         // store the remoteaddress for use by sendto()
         memset(&m_sockaddr, 0, sizeof(sockaddr));
@@ -247,6 +228,16 @@ public:
      */
     SocketRet startUnicast(uint16_t localPort) {
         SocketRet ret;
+        int result = m_socketCore.Initialize();
+        if (result != 0) {
+#if defined(FMT_SUPPORT)
+            ret.m_msg = fmt::format("Error: Socket initialization failed: {}", result);
+#else
+            ret.m_msg = "Error: Socket initialization failed";
+#endif
+            ret.m_success = false;
+            return ret;
+        }
 
         m_fd = m_socketCore.Socket(AF_INET, SOCK_DGRAM, 0);
         if (m_fd == INVALID_SOCKET) {
@@ -356,36 +347,19 @@ public:
      *
      * @return SocketRet - indication that the UDP socket was shut down successfully
      */
-    SocketRet finish() {
-        SocketRet ret;
+    void finish() {
         m_stop.store(true);
         if (m_thread.joinable()) {
             try {
                 m_thread.join();
             }
             catch (std::exception &e) {
-                ret.m_success = false;
-#if defined(FMT_SUPPORT)
-            ret.m_msg = fmt::format("Error: exception in std::thread::join(): {}",e.what());
-#else
-#endif
-                return ret;
             }
         }
         if (m_fd != INVALID_SOCKET) {
-            if (m_socketCore.Close(m_fd) == -1) {  // close failed
-                ret.m_success = false;
-#if defined(FMT_SUPPORT)
-                ret.m_msg = fmt::format("Error: errno {}", errno);
-#else
-                ret.m_msg = strerror(errno); // NOLINT
-#endif
-                return ret;
-            }
+            m_socketCore.Close(m_fd);
         }
         m_fd = INVALID_SOCKET;
-        ret.m_success = true;
-        return ret;
     }
 
 private:
@@ -469,10 +443,6 @@ private:
      * @brief Helper for hostname resolution
      */
     AddrLookup<SocketImpl> m_addrLookup;
-
-#ifdef _WIN32
-    WSADATA  m_wsaData;
-#endif
 };
 
 }  // Namespace sockets

@@ -40,7 +40,19 @@ class SocketCore {
 public:
     SocketCore() = default;
 
-    ~SocketCore() = default;
+    ~SocketCore() {
+#ifdef _WIN32
+        ::WSACleanup();
+#endif
+    }
+
+    int Initialize() {
+#ifdef _WIN32
+        return WSAStartup(MAKEWORD(2,2), &m_wsaData);
+#else
+        return 0;
+#endif
+    }
 
     SOCKET Socket(int domain, int type, int protocol) {
         return ::socket(domain, type, protocol);
@@ -113,6 +125,11 @@ public:
     void FreeAddrInfo(struct addrinfo *res) {
         return ::freeaddrinfo(res);
     }
+
+private:
+#ifdef _WIN32
+    WSADATA  m_wsaData;
+#endif
 };
 
 }  // namespace sockets

@@ -69,18 +69,7 @@ public:
      * @brief Shutdown and destroy the TCP Server object
      */
     ~TcpServer() {
-        m_stop = true;
-        if (m_thread.joinable()) {
-            m_stop = true;
-            try {
-                m_thread.join();
-            }
-            catch (std::exception &e) {               
-            }
-        }
-        if (m_sockfd != INVALID_SOCKET) {
-            m_socketCore.Close(m_sockfd);
-        }
+        finish();
     }
 
     TcpServer &operator=(const TcpServer &) = delete;
@@ -101,21 +90,16 @@ public:
     SocketRet start(uint16_t port) {
         SocketRet ret;
 
-#ifdef _WIN32
-        int result;
-
-        // Initialize Winsock
-        result = WSAStartup(MAKEWORD(2,2), &m_wsaData);
+        int result = m_socketCore.Initialize();
         if (result != 0) {
 #if defined(FMT_SUPPORT)
-            ret.m_msg = fmt::format("Error: WSAStartup() failed: {}", result);
+            ret.m_msg = fmt::format("Error: Socket initialization failed: {}", result);
 #else
-            ret.m_msg = "WSAStartup() failed";
+            ret.m_msg = "Socket initialization failed";
 #endif
             ret.m_success = false;
             return ret;
         }
-#endif
 
         m_sockfd = m_socketCore.Socket(AF_INET, SOCK_STREAM, 0);
         if (m_sockfd == INVALID_SOCKET) {  // socket failed
@@ -279,55 +263,29 @@ public:
      *
      * @return SocketRet - indication that the server was stopped successfully
      */
-    SocketRet finish() {
-        SocketRet ret;
+    void finish() {
         m_stop = true;
         if (m_thread.joinable()) {
             m_stop = true;
             try {
                 m_thread.join();
             }
-            catch (std::exception &e) {
-                ret.m_success = false;
-#if defined(FMT_SUPPORT)
-            ret.m_msg = fmt::format("Error: exception in std::thread::join(): {}",e.what());
-#else
-#endif
-                return ret;                
+            catch (std::exception &e) {              
             }
         }
 
         // Close client sockets
         std::lock_guard<std::mutex> guard(m_mutex);
         for (auto &client : m_clients) {
-            if (m_socketCore.Close(client.second.m_sockfd) == -1) {
-                // close() failed
-                ret.m_success = false;
-#if defined(FMT_SUPPORT)
-                ret.m_msg = fmt::format("Error: close() failed errno {}", errno);
-#else
-                ret.m_msg = "Error: close() failed";
-#endif
-                return ret;
-            }
+            m_socketCore.Close(client.second.m_sockfd);
         }
 
         // Close accept socket
         if (m_sockfd != INVALID_SOCKET) {
-            if (m_socketCore.Close(m_sockfd) == -1) {  // close failed
-                ret.m_success = false;
-#if defined(FMT_SUPPORT)
-                ret.m_msg = fmt::format("Error: close() failed errno {}", errno);
-#else
-                ret.m_msg = "Error: close() failed";
-#endif
-                return ret;
-            }
+            m_socketCore.Close(m_sockfd);
         }
         m_sockfd = INVALID_SOCKET;
         m_clients.clear();
-        ret.m_success = true;
-        return ret;
     }
 
     /**
@@ -598,10 +556,6 @@ private:
      * @brief Interface for socket calls
      */
     SocketImpl m_socketCore;
-
-#ifdef _WIN32
-    WSADATA  m_wsaData;
-#endif
 };
 
 }  // Namespace sockets
