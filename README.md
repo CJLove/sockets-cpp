@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/CJLove/sockets-cpp.svg?branch=master)](https://travis-ci.com/CJLove/sockets-cpp)
+
 # sockets-cpp
 
 A header-only library with socket classes:
