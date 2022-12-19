@@ -66,6 +66,9 @@ public:
             catch (std::exception &e) {
             }
         }
+        if (m_fd != INVALID_SOCKET) {
+            m_socketCore.Close(m_fd);
+        }
     }
 
     UdpSocket &operator=(const UdpSocket &) = delete;
@@ -165,13 +168,15 @@ public:
         // store the multicast group address for use by send()
         memset(&m_sockaddr, 0, sizeof(sockaddr));
         m_sockaddr.sin_family = AF_INET;
-        m_sockaddr.sin_addr.s_addr = inet_pton(AF_INET,mcastAddr,nullptr); // inet_addr(mcastAddr);
+        inet_pton(AF_INET,mcastAddr,&m_sockaddr.sin_addr);
+        //m_sockaddr.sin_addr.s_addr = inet_addr(mcastAddr);
         m_sockaddr.sin_port = htons(port);
 
         // use setsockopt() to request that the kernel join a multicast group
         //
         struct ip_mreq mreq { };
-        mreq.imr_multiaddr.s_addr = inet_pton(AF_INET,mcastAddr,nullptr); // inet_addr(mcastAddr);
+        inet_pton(AF_INET,mcastAddr,&mreq.imr_multiaddr);
+        //mreq.imr_multiaddr.s_addr = inet_addr(mcastAddr);
         mreq.imr_interface.s_addr = htonl(INADDR_ANY);
         if (m_socketCore.SetSockOpt(m_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, reinterpret_cast<char *>(&mreq), sizeof(mreq)) < 0) {
             ret.m_success = false;

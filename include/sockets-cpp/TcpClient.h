@@ -70,6 +70,9 @@ public:
             catch (std::exception &e) {               
             }
         }
+        if (m_sockfd != INVALID_SOCKET) {
+            m_socketCore.Close(m_sockfd);
+        }
     }
 
     TcpClient &operator=(const TcpClient &) = delete;
