@@ -31,6 +31,20 @@ jobs:
       file: sockets-cpp-git/ci/gcc940.yml
     - task: gcc8_4_0
       file: sockets-cpp-git/ci/gcc840.yml
+    - task: clang14
+      file: sockets-cpp-git/ci/clang14.yml
+      
+- name: release
+  public: true
+  plan:
+  - get: sockets-cpp-git
+    passed: [ build-matrix ]
+    trigger: true
+  - in_parallel:
+    - task: gcc_12_2_1_rel
+      file: sockets-cpp-git/ci/gcc1221rel.yml
+    - task: clang14_rel
+      file: sockets-cpp-git/ci/clang14rel.yml
 
 - name: sanitizers
   public: true
@@ -44,5 +58,7 @@ jobs:
       file: sockets-cpp-git/ci/asan.yml
     - task: tsan
       file: sockets-cpp-git/ci/tsan.yml
+    - task: ubsan
+      file: sockets-cpp-git/ci/ubsan.yml
 
         
