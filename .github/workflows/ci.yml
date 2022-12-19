@@ -102,6 +102,7 @@ jobs:
             -DCMAKE_PREFIX_PATH=/usr/local/cmake \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_STANDARD=14 \
+            -DFMT_SUPPORT=OFF \
             -DBUILD_EXAMPLES=ON \
             -DBUILD_TESTS=ON
           make -j2
