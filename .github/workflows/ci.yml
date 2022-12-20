@@ -70,40 +70,40 @@ jobs:
           make -j2
           ctest -j2 --output-on-failure
 
-  build_osx:
-    runs-on: macOS-latest
-    name: "OS X Clang (C++14, Release)"
-    steps:
-      - uses: actions/checkout@main
-      - name: Setup fmt
-        run: |
-          curl -sSL https://github.com/fmtlib/fmt/archive/refs/tags/8.0.1.tar.gz -o /tmp/fmtlib.tar.gz
-          tar zxf /tmp/fmtlib.tar.gz
-          pushd fmt-8.0.1
-          mkdir build 
-          cd build
-          cmake -DFMT_TEST=OFF -DBUILD_SHARED_LIBS=ON ..
-          make install
-          popd
-      - name: Setup googletest
-        run: |
-          curl -sSL https://github.com/google/googletest/archive/refs/tags/release-1.11.0.tar.gz -o /tmp/gtest.tar.gz
-          tar zxf /tmp/gtest.tar.gz
-          pushd googletest-*
-          mkdir build
-          cd build
-          cmake ..
-          make install
-          popd
-      - name: Build
-        run: |
-          mkdir -p build && cd build
-          cmake .. \
-            -DCMAKE_PREFIX_PATH=/usr/local/lib/cmake \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_CXX_STANDARD=14 \
-            -DFMT_SUPPORT=OFF \
-            -DBUILD_EXAMPLES=ON \
-            -DBUILD_TESTS=ON
-          make -j2
-          ctest -j2 --output-on-failure
+  # build_osx:
+  #   runs-on: macOS-latest
+  #   name: "OS X Clang (C++14, Release)"
+  #   steps:
+  #     - uses: actions/checkout@main
+  #     - name: Setup fmt
+  #       run: |
+  #         curl -sSL https://github.com/fmtlib/fmt/archive/refs/tags/8.0.1.tar.gz -o /tmp/fmtlib.tar.gz
+  #         tar zxf /tmp/fmtlib.tar.gz
+  #         pushd fmt-8.0.1
+  #         mkdir build 
+  #         cd build
+  #         cmake -DFMT_TEST=OFF -DBUILD_SHARED_LIBS=ON ..
+  #         make install
+  #         popd
+  #     - name: Setup googletest
+  #       run: |
+  #         curl -sSL https://github.com/google/googletest/archive/refs/tags/release-1.11.0.tar.gz -o /tmp/gtest.tar.gz
+  #         tar zxf /tmp/gtest.tar.gz
+  #         pushd googletest-*
+  #         mkdir build
+  #         cd build
+  #         cmake ..
+  #         make install
+  #         popd
+  #     - name: Build
+  #       run: |
+  #         mkdir -p build && cd build
+  #         cmake .. \
+  #           -DCMAKE_PREFIX_PATH=/usr/local/lib/cmake \
+  #           -DCMAKE_BUILD_TYPE=Release \
+  #           -DCMAKE_CXX_STANDARD=14 \
+  #           -DFMT_SUPPORT=OFF \
+  #           -DBUILD_EXAMPLES=ON \
+  #           -DBUILD_TESTS=ON
+  #         make -j2
+  #         ctest -j2 --output-on-failure
