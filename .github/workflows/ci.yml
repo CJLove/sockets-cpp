@@ -99,7 +99,7 @@ jobs:
         run: |
           mkdir -p build && cd build
           cmake .. \
-            -DCMAKE_PREFIX_PATH=/usr/local/cmake \
+            -DCMAKE_PREFIX_PATH=/usr/local/lib/cmake \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_STANDARD=14 \
             -DFMT_SUPPORT=OFF \
