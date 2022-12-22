@@ -110,9 +110,17 @@ endif()
 #---------------------------------------------------------------------------------------
 # Dependencies
 #---------------------------------------------------------------------------------------
+
+include(FetchContent)
+
 if (FMT_SUPPORT)
   # Fmt
-  find_package(fmt 8.0.1 REQUIRED)
+#  find_package(fmt 8.0.1 REQUIRED)
+  FetchContent_Declare(fmt
+    GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+    GIT_TAG master
+  )
+  FetchContent_MakeAvailable(fmt)
 
   add_definitions(-DFMT_SUPPORT)
 endif(FMT_SUPPORT)
@@ -122,7 +130,13 @@ find_package(Threads REQUIRED)
 
 if (BUILD_TESTS)
   # Google Test
-  find_package(GTest REQUIRED)
+  #find_package(GTest REQUIRED)
+  FetchContent_Declare(googletest
+    GIT_REPOSITORY https://github.com/google/googletest.git
+    GIT_TAG main
+  )
+  FetchContent_MakeAvailable(googletest)
+
 endif()
 
 # clang-tidy

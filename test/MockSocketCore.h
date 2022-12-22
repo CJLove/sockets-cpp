@@ -1,9 +1,33 @@
 #pragma once
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include <sys/select.h>
-#include <sys/socket.h>
-#include <unistd.h>
+#ifdef _WIN32
+    #ifndef WIN32_LEAN_AND_MEAN
+        #define WIN32_LEAN_AND_MEAN
+    #endif // WIN32_LEAN_AND_MEAN
+    #include <winsock2.h>
+    #include <windows.h>
+    #include <ws2tcpip.h>
+    #include <inaddr.h>
+    // Need to link with Ws2_32.lib, Mswsock.lib, and Advapi32.lib
+    #pragma comment (lib, "Ws2_32.lib")
+    #pragma comment (lib, "Mswsock.lib")
+    #pragma comment (lib, "AdvApi32.lib")
+#else
+    #include <sys/select.h>
+    #include <sys/socket.h>
+    #include <netdb.h>
+    #include <arpa/inet.h>
+    #include <unistd.h>
+#endif
+
+#ifdef _WIN32
+using ssize_t = int;
+using in_addr_t = ULONG;
+#else
+using SOCKET = int;
+constexpr SOCKET INVALID_SOCKET = -1;
+#endif
 
 /**
  * @brief Mock class for socket api calls

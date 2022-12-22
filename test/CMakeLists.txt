@@ -28,7 +28,7 @@ set ( socketTests_SRC
 add_executable ( socketTests ${socketTests_SRC} )
 
 
-target_link_libraries( socketTests fmt gtest gmock gtest_main pthread )
+target_link_libraries( socketTests fmt::fmt gtest gmock gmock_main gtest_main Threads::Threads )
 
 
 if (BUILD_COVERAGE)
