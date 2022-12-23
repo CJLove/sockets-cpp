@@ -70,7 +70,7 @@ jobs:
 
   build_windows:
     runs-on: windows-latest
-    name: "Windows VS2019 (C++14, Release)"
+    name: "Windows VS2022 (C++14, Release)"
     steps:
       - uses: actions/checkout@main
       - name: Print env
@@ -83,6 +83,7 @@ jobs:
           ninja --version
           cmake --version
       - name: Build
+        shell: bash
         run: |
           mkdir build
           cd build
