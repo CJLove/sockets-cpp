@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@main
       - name: Setup
         run: |
-          apt-get update && apt-get install -y curl
+          apt-get update && apt-get install -y curl git
           CMAKE_VERSION="3.24.2"
           curl -sSL https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.sh -o install-cmake.sh
           chmod +x install-cmake.sh
@@ -39,26 +39,6 @@ jobs:
           fi
           echo "CC=clang-${{ matrix.config.version }}" >> $GITHUB_ENV
           echo "CXX=clang++-${{ matrix.config.version }}" >> $GITHUB_ENV
-      - name: Setup fmt
-        run: |
-          curl -sSL https://github.com/fmtlib/fmt/archive/refs/tags/8.0.1.tar.gz -o /tmp/fmtlib.tar.gz
-          tar zxf /tmp/fmtlib.tar.gz
-          pushd fmt-8.0.1
-          mkdir build 
-          cd build
-          cmake -DFMT_TEST=OFF -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX=/usr/ ..
-          make install
-          popd 
-      - name: Setup googletest
-        run: |
-          curl -sSL https://github.com/google/googletest/archive/refs/tags/release-1.11.0.tar.gz -o /tmp/gtest.tar.gz
-          tar zxf /tmp/gtest.tar.gz
-          pushd googletest-*
-          mkdir build
-          cd build
-          cmake ..
-          make install
-          popd
       - name: Build
         run: |
           mkdir -p build && cd build
@@ -70,40 +50,42 @@ jobs:
           make -j2
           ctest -j2 --output-on-failure
 
-  # build_osx:
-  #   runs-on: macOS-latest
-  #   name: "OS X Clang (C++14, Release)"
-  #   steps:
-  #     - uses: actions/checkout@main
-  #     - name: Setup fmt
-  #       run: |
-  #         curl -sSL https://github.com/fmtlib/fmt/archive/refs/tags/8.0.1.tar.gz -o /tmp/fmtlib.tar.gz
-  #         tar zxf /tmp/fmtlib.tar.gz
-  #         pushd fmt-8.0.1
-  #         mkdir build 
-  #         cd build
-  #         cmake -DFMT_TEST=OFF -DBUILD_SHARED_LIBS=ON ..
-  #         make install
-  #         popd
-  #     - name: Setup googletest
-  #       run: |
-  #         curl -sSL https://github.com/google/googletest/archive/refs/tags/release-1.11.0.tar.gz -o /tmp/gtest.tar.gz
-  #         tar zxf /tmp/gtest.tar.gz
-  #         pushd googletest-*
-  #         mkdir build
-  #         cd build
-  #         cmake ..
-  #         make install
-  #         popd
-  #     - name: Build
-  #       run: |
-  #         mkdir -p build && cd build
-  #         cmake .. \
-  #           -DCMAKE_PREFIX_PATH=/usr/local/lib/cmake \
-  #           -DCMAKE_BUILD_TYPE=Release \
-  #           -DCMAKE_CXX_STANDARD=14 \
-  #           -DFMT_SUPPORT=OFF \
-  #           -DBUILD_EXAMPLES=ON \
-  #           -DBUILD_TESTS=ON
-  #         make -j2
-  #         ctest -j2 --output-on-failure
+  build_osx:
+    runs-on: macOS-latest
+    name: "OS X Clang (C++14, Release)"
+    steps:
+      - uses: actions/checkout@main
+      - name: Build
+        run: |
+          mkdir -p build && cd build
+          cmake .. \
+            -DCMAKE_PREFIX_PATH=/usr/local/lib/cmake \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_STANDARD=14 \
+            -DFMT_SUPPORT=ON \
+            -DBUILD_EXAMPLES=ON \
+            -DBUILD_TESTS=ON
+          make -j2
+          ctest -j2 --output-on-failure
+
+  build_windows:
+    runs-on: windows-latest
+    name: "Windows VS2022 (C++14, Release)"
+    steps:
+      - uses: actions/checkout@main
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Print env
+        run: |
+          echo github.event.action: ${{ github.event.action }}
+          echo github.event_name: ${{ github.event_name }}
+      - name: Install dependencies on windows
+        run: |
+          choco install ninja cmake
+          ninja --version
+          cmake --version
+      - name: Build
+        run: |
+          mkdir build
+          cd build
+          cmake .. -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=14 -DFMT_SUPPORT=OFF -DBUILD_EXAMPLES=ON -DBUILD_TESTS=ON 
+          ninja

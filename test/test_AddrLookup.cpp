@@ -27,7 +27,11 @@ TEST(AddrLookup, localhost)
     in_addr_t expected { 0x100007f };
     MockSocketCore core;
     struct addrinfo res;
-    struct sockaddr theAddr = { 0, "\000\000\177\000\000\001" };
+    struct sockaddr theAddr = { 0,
+#ifdef __APPLE__
+    0,
+#endif
+    "\000\000\177\000\000\001" };
     res.ai_addr = &theAddr;
     sockets::AddrLookup<MockSocketCore> lookup(core);
     EXPECT_CALL(core, GetAddrInfo(name,_, NotNull(),_)).WillOnce(DoAll(SetArgPointee<3>(&res), Return(0)));
@@ -43,7 +47,11 @@ TEST(AddrLookup, ipv4addr)
     in_addr_t expected { 0x100007f };
     MockSocketCore core;
     struct addrinfo res;
-    struct sockaddr theAddr = { 0, "\000\000\177\000\000\001" };
+    struct sockaddr theAddr = { 0,
+#ifdef __APPLE__
+    0,
+#endif    
+     "\000\000\177\000\000\001" };
     res.ai_addr = &theAddr;
     sockets::AddrLookup<MockSocketCore> lookup(core);
     EXPECT_CALL(core, GetAddrInfo(name,_, NotNull(),_)).WillOnce(DoAll(SetArgPointee<3>(&res), Return(0)));

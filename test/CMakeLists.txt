@@ -7,6 +7,8 @@ enable_testing()
 # Disable clang-tidy checks for unit test code
 set(CMAKE_CXX_CLANG_TIDY "")
 
+add_definitions( -DGTEST_LINKED_AS_SHARED_LIBRARY )
+
 if (BUILD_COVERAGE)
     add_definitions( --coverage )
 endif (BUILD_COVERAGE)
@@ -18,7 +20,8 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/test
 )
 
-set ( socketTests_SRC 
+set ( socketTests_SRC
+    main.cpp
     test_AddrLookup.cpp
     test_UdpSocket.cpp
     test_TcpClient.cpp
@@ -26,9 +29,11 @@ set ( socketTests_SRC
 )
 
 add_executable ( socketTests ${socketTests_SRC} )
-
-
-target_link_libraries( socketTests fmt gtest gmock gtest_main pthread )
+ 
+if (FMT_SUPPORT)
+    target_link_libraries( socketTests PUBLIC fmt::fmt )
+endif(FMT_SUPPORT)
+target_link_libraries( socketTests PUBLIC gtest gmock Threads::Threads )
 
 
 if (BUILD_COVERAGE)

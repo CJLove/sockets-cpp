@@ -102,7 +102,11 @@ TEST(TcpClientSocket,tcp_connect_fail)
     TcpClientTestApp app(&opts);
     MockSocketCore &core = app.m_socket.getCore();
     struct addrinfo res;
-    struct sockaddr theAddr = { 0, "\000\000\177\000\000\001" };
+    struct sockaddr theAddr = { 0, 
+#ifdef __APPLE__
+    0,
+#endif   
+    "\000\000\177\000\000\001" };
     res.ai_addr = &theAddr;
     EXPECT_CALL(core, Socket(_,_,_)).WillOnce(Return(4));
     EXPECT_CALL(core, SetSockOpt(_,_,_,_,_)).WillOnce(Return(0)).WillOnce(Return(0));
@@ -119,7 +123,11 @@ TEST(TcpClientSocket,tcp_connect)
     TcpClientTestApp app;
     MockSocketCore &core = app.m_socket.getCore();
     struct addrinfo res;
-    struct sockaddr theAddr = { 0, "\000\000\177\000\000\001" };
+    struct sockaddr theAddr = { 0,
+#ifdef __APPLE__
+    0,
+#endif   
+    "\000\000\177\000\000\001" };
     res.ai_addr = &theAddr;
     EXPECT_CALL(core, Socket(_,_,_)).WillOnce(Return(4));
     EXPECT_CALL(core, SetSockOpt(_,_,_,_,_)).WillOnce(Return(0)).WillOnce(Return(0));
@@ -140,7 +148,11 @@ TEST(TcpClientSocket,tcp_finish_fail)
     TcpClientTestApp app;
     MockSocketCore &core = app.m_socket.getCore();
     struct addrinfo res;
-    struct sockaddr theAddr = { 0, "\000\000\177\000\000\001" };
+    struct sockaddr theAddr = { 0, 
+#ifdef __APPLE__
+    0,
+#endif   
+    "\000\000\177\000\000\001" };
     res.ai_addr = &theAddr;
     EXPECT_CALL(core, Socket(_,_,_)).WillOnce(Return(4));
     EXPECT_CALL(core, SetSockOpt(_,_,_,_,_)).WillOnce(Return(0)).WillOnce(Return(0));
@@ -161,7 +173,11 @@ TEST(TcpClientSocket,tcp_send_fail)
     TcpClientTestApp app;
     MockSocketCore &core = app.m_socket.getCore();
     struct addrinfo res;
-    struct sockaddr theAddr = { 0, "\000\000\177\000\000\001" };
+    struct sockaddr theAddr = { 0, 
+#ifdef __APPLE__
+    0,
+#endif   
+    "\000\000\177\000\000\001" };
     res.ai_addr = &theAddr;
     EXPECT_CALL(core, Socket(_,_,_)).WillOnce(Return(4));
     EXPECT_CALL(core, SetSockOpt(_,_,_,_,_)).WillOnce(Return(0)).WillOnce(Return(0));
@@ -186,7 +202,11 @@ TEST(TcpClientSocket,tcp_send_partial)
     TcpClientTestApp app;
     MockSocketCore &core = app.m_socket.getCore();
     struct addrinfo res;
-    struct sockaddr theAddr = { 0, "\000\000\177\000\000\001" };
+    struct sockaddr theAddr = { 0, 
+#ifdef __APPLE__
+    0,
+#endif   
+    "\000\000\177\000\000\001" };
     res.ai_addr = &theAddr;
     EXPECT_CALL(core, Socket(_,_,_)).WillOnce(Return(4));
     EXPECT_CALL(core, SetSockOpt(_,_,_,_,_)).WillOnce(Return(0)).WillOnce(Return(0));
@@ -211,7 +231,11 @@ TEST(TcpClientSocket,tcp_send_success)
     TcpClientTestApp app;
     MockSocketCore &core = app.m_socket.getCore();
     struct addrinfo res;
-    struct sockaddr theAddr = { 0, "\000\000\177\000\000\001" };
+    struct sockaddr theAddr = { 0, 
+#ifdef __APPLE__
+    0,
+#endif
+    "\000\000\177\000\000\001" };
     res.ai_addr = &theAddr;
     EXPECT_CALL(core, Socket(_,_,_)).WillOnce(Return(4));
     EXPECT_CALL(core, SetSockOpt(_,_,_,_,_)).WillOnce(Return(0)).WillOnce(Return(0));
@@ -236,7 +260,11 @@ TEST(TcpClientSocket,tcp_receive)
     TcpClientTestApp app;
     MockSocketCore &core = app.m_socket.getCore();
     struct addrinfo res;
-    struct sockaddr theAddr = { 0, "\000\000\177\000\000\001" };
+    struct sockaddr theAddr = { 0, 
+#ifdef __APPLE__
+    0,
+#endif
+    "\000\000\177\000\000\001" };
     res.ai_addr = &theAddr;
     fd_set fds;
     FD_ZERO(&fds);
@@ -266,7 +294,11 @@ TEST(TcpClientSocket,tcp_server_disconnect)
     TcpClientTestApp app;
     MockSocketCore &core = app.m_socket.getCore();
     struct addrinfo res;
-    struct sockaddr theAddr = { 0, "\000\000\177\000\000\001" };
+    struct sockaddr theAddr = { 0, 
+#ifdef __APPLE__
+    0,
+#endif
+    "\000\000\177\000\000\001" };
     res.ai_addr = &theAddr;
     fd_set fds;
     FD_ZERO(&fds);
