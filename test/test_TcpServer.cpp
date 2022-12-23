@@ -145,7 +145,11 @@ TEST(TcpServerSocket,client_connect_send)
 {
     TcpServerTestApp app;
     MockSocketCore &core = app.m_socket.getCore();
-    struct sockaddr client_addr = { 0, "\000\000\177\000\000\001" };
+    struct sockaddr client_addr = { 0, 
+#ifdef __APPLE__
+    0,
+#endif
+    "\000\000\177\000\000\001" };
     struct sockaddr *ptr = &client_addr;
     struct sockaddr *endPtr = ptr + 1;
     fd_set fds;
@@ -194,7 +198,11 @@ TEST(TcpServerSocket,client_connect_receive_disconnect)
 {
     TcpServerTestApp app;
     MockSocketCore &core = app.m_socket.getCore();
-    struct sockaddr client_addr = { 0, "\000\000\177\000\000\001" };
+    struct sockaddr client_addr = { 0, 
+#ifdef __APPLE__
+    0,
+#endif
+   "\000\000\177\000\000\001" };
     struct sockaddr *ptr = &client_addr;
     struct sockaddr *endPtr = ptr + 1;
     fd_set acceptFds;

@@ -240,7 +240,11 @@ TEST(UdpSocket,unicast_lookup_success)
     MockSocketCore &core = app.m_socket.getCore();
 
     struct addrinfo res;
-    struct sockaddr theAddr = { 0, "\000\000\177\000\000\001" };
+    struct sockaddr theAddr = { 0,
+#ifdef __APPLE__
+    0,
+#endif
+    "\000\000\177\000\000\001" };
     res.ai_addr = &theAddr;
     sockets::AddrLookup<MockSocketCore> lookup(core);
     EXPECT_CALL(core, GetAddrInfo(_,_, NotNull(),_)).WillOnce(DoAll(SetArgPointee<3>(&res), Return(0)));
@@ -288,7 +292,11 @@ TEST(UdpSocket,send_msg_fail)
     MockSocketCore &core = app.m_socket.getCore();
 
     struct addrinfo res;
-    struct sockaddr theAddr = { 0, "\000\000\177\000\000\001" };
+    struct sockaddr theAddr = { 0, 
+#ifdef __APPLE__
+    0,
+#endif   
+    "\000\000\177\000\000\001" };
     res.ai_addr = &theAddr;
     sockets::AddrLookup<MockSocketCore> lookup(core);
     EXPECT_CALL(core, GetAddrInfo(_,_, NotNull(),_)).WillOnce(DoAll(SetArgPointee<3>(&res), Return(0)));
@@ -315,7 +323,11 @@ TEST(UdpSocket,send_msg_partial)
     MockSocketCore &core = app.m_socket.getCore();
 
     struct addrinfo res;
-    struct sockaddr theAddr = { 0, "\000\000\177\000\000\001" };
+    struct sockaddr theAddr = { 0,
+#ifdef __APPLE__
+    0,
+#endif
+    "\000\000\177\000\000\001" };
     res.ai_addr = &theAddr;
     sockets::AddrLookup<MockSocketCore> lookup(core);
     EXPECT_CALL(core, GetAddrInfo(_,_, NotNull(),_)).WillOnce(DoAll(SetArgPointee<3>(&res), Return(0)));
@@ -342,7 +354,11 @@ TEST(UdpSocket,send_msg)
     MockSocketCore &core = app.m_socket.getCore();
 
     struct addrinfo res;
-    struct sockaddr theAddr = { 0, "\000\000\177\000\000\001" };
+    struct sockaddr theAddr = { 0,
+#ifdef __APPLE__
+    0,
+#endif
+    "\000\000\177\000\000\001" };
     res.ai_addr = &theAddr;
     sockets::AddrLookup<MockSocketCore> lookup(core);
     EXPECT_CALL(core, GetAddrInfo(_,_, NotNull(),_)).WillOnce(DoAll(SetArgPointee<3>(&res), Return(0)));
