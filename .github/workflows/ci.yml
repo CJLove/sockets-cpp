@@ -73,6 +73,7 @@ jobs:
     name: "Windows VS2022 (C++14, Release)"
     steps:
       - uses: actions/checkout@main
+      - uses: ilammy/msvc-dev-cmd@v1
       - name: Print env
         run: |
           echo github.event.action: ${{ github.event.action }}
@@ -83,15 +84,8 @@ jobs:
           ninja --version
           cmake --version
       - name: Build
-        shell: bash
         run: |
           mkdir build
           cd build
-          cmake .. \
-            -G "Ninja"
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_CXX_STANDARD=14 \
-            -DFMT_SUPPORT=OFF \
-            -DBUILD_EXAMPLES=ON \
-            -DBUILD_TESTS=ON 
+          cmake .. -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=14 -DFMT_SUPPORT=OFF -DBUILD_EXAMPLES=ON -DBUILD_TESTS=ON 
           ninja
