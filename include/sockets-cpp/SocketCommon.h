@@ -46,6 +46,12 @@ struct SocketOpt {
      */
     int m_rxBufSize = RX_BUFFER_SIZE;
 
+    /**
+     * @brief Socket listen address
+     * 
+     */
+    std::string m_listenAddr = "0.0.0.0";
+
 };
 
 }  // Namespace sockets

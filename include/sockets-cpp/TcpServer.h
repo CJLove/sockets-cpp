@@ -147,7 +147,8 @@ public:
 
         memset(&m_serverAddress, 0, sizeof(m_serverAddress));
         m_serverAddress.sin_family = AF_INET;
-        m_serverAddress.sin_addr.s_addr = htonl(INADDR_ANY);
+        inet_pton(AF_INET, m_sockOptions.m_listenAddr.c_str(),&m_serverAddress.sin_addr.s_addr);
+//        m_serverAddress.sin_addr.s_addr = htonl(INADDR_ANY);
         m_serverAddress.sin_port = htons(port);
 
         int bindSuccess =

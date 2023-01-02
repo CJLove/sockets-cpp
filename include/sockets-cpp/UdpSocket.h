@@ -164,7 +164,6 @@ public:
         //
         struct ip_mreq mreq { };
         inet_pton(AF_INET,mcastAddr,&mreq.imr_multiaddr);
-        //mreq.imr_multiaddr.s_addr = inet_addr(mcastAddr);
         mreq.imr_interface.s_addr = htonl(INADDR_ANY);
         if (m_socketCore.SetSockOpt(m_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, reinterpret_cast<char *>(&mreq), sizeof(mreq)) < 0) {
             ret.m_success = false;
@@ -302,7 +301,7 @@ public:
 
         sockaddr_in localAddr {};
         localAddr.sin_family = AF_INET;
-        localAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+        inet_pton(AF_INET,m_sockOptions.m_listenAddr.c_str(),&localAddr.sin_addr.s_addr);
         localAddr.sin_port = htons(localPort);
 
         if (m_socketCore.Bind(m_fd, reinterpret_cast<struct sockaddr *>(&localAddr), sizeof(localAddr)) < 0) {
