@@ -2,7 +2,7 @@
 # sockets-cpp
 
 A header-only library with socket classes:
-[![ci](https://github.com/CJLove/sockets-cpp/actions/workflows/ci.yml/badge.svg)]
+[!ci](https://github.com/CJLove/sockets-cpp/actions/workflows/ci.yml/badge.svg)
 
 * `TcpClient` - template class for a TCP client socket
 * `TcpServer` - template class for a TCP Server supporting multiple client connections
@@ -13,6 +13,30 @@ A header-only library with socket classes:
 * C++14 or later
 * CMake
 * gtest and gmock for unit tests. Enable unit tests by specifying `-DBUILD_TESTS=ON` when running `CMake`
+
+# Socket Options
+```c++
+struct SocketOpt {
+    /**
+     * @brief Value passed to setsockopt(SO_SNDBUF)
+     * 
+     */
+    int m_txBufSize = TX_BUFFER_SIZE;
+
+    /**
+     * @brief Value passed to setsockopt(SO_RCVBUF)
+     * 
+     */
+    int m_rxBufSize = RX_BUFFER_SIZE;
+
+    /**
+     * @brief Socket listen address
+     * 
+     */
+    std::string m_listenAddr = "0.0.0.0";
+
+};
+```
 
 # UdpSocket
 The UdpSocket class is templated on the "callback" class which receives data via UDP.
@@ -109,7 +133,7 @@ $ ./clientApp -a <ipAddr> -p <port>
 ```
 ## TCP Server
 ```bash
-$ ./serverApp -p <port>
+$ ./serverApp -p <port> -L <listenAddr>
 ```
 ## UDP Multicast
 ```bash
@@ -117,7 +141,7 @@ $ ./mcastApp -m <multicastAddr> -p <port>
 ```
 ## UDP Unicast
 ```bash
-$ ./unicastApp -a <ipAddr> -l <localPort> -p <remotePort>
+$ ./unicastApp -a <ipAddr> -l <localPort> -p <remotePort> -L <listenAddr>
 ```
 
 

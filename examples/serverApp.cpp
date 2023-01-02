@@ -9,7 +9,7 @@
 class ServerApp {
 public:
     // TCP Server
-    explicit ServerApp(uint16_t port);
+    explicit ServerApp(const char *listenAddr, uint16_t port);
 
     virtual ~ServerApp();
 
@@ -22,13 +22,14 @@ public:
     void sendMsg(int idx, const char *data, size_t len);
 
 private:
+    sockets::SocketOpt m_socketOpt;
     sockets::TcpServer<ServerApp> m_server;
     int m_clientIdx = 0;
     std::set<int> m_clients;
     std::mutex m_mutex;
 };
 
-ServerApp::ServerApp(uint16_t port) : m_server(*this) {
+ServerApp::ServerApp(const char *listenAddr, uint16_t port) : m_socketOpt({ sockets::TX_BUFFER_SIZE, sockets::RX_BUFFER_SIZE, listenAddr}), m_server(*this, &m_socketOpt) {
     sockets::SocketRet ret = m_server.start(port);
     if (ret.m_success) {
         std::cout << "Server started on port " << port << "\n";
@@ -89,16 +90,20 @@ void ServerApp::onClientDisconnect(const sockets::ClientHandle &client, const so
 }
 
 void usage() {
-    std::cout << "ServerApp -p <port>\n";
+    std::cout << "ServerApp -p <port> -L <listenAddr>\n";
 }
 
 int main(int argc, char **argv) {
     int arg = 0;
     uint16_t port = 0;
-    while ((arg = getopt(argc, argv, "p:?")) != EOF) {    // NOLINT
+    const char *listenAddr = "0.0.0.0";
+    while ((arg = getopt(argc, argv, "p:L:?")) != EOF) {    // NOLINT
         switch (arg) {
         case 'p':
             port = static_cast<uint16_t>(std::stoul(optarg));
+            break;
+        case 'L':
+            listenAddr = optarg;
             break;
         case '?':
             usage();
@@ -106,7 +111,7 @@ int main(int argc, char **argv) {
         }
     }
 
-    auto *app = new ServerApp(port);
+    auto *app = new ServerApp(listenAddr, port);
 
     while (true) {
         std::string data;
