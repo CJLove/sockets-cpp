@@ -2,7 +2,7 @@
 # sockets-cpp
 
 A header-only library with socket classes:
-[!ci](https://github.com/CJLove/sockets-cpp/actions/workflows/ci.yml/badge.svg)
+[![ci](https://github.com/CJLove/sockets-cpp/actions/workflows/ci.yml/badge.svg)](https://github.com/CJLove/sockets-cpp/actions/workflows/ci.yml)
 
 * `TcpClient` - template class for a TCP client socket
 * `TcpServer` - template class for a TCP Server supporting multiple client connections
