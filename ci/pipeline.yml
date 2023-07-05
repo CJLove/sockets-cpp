@@ -21,8 +21,10 @@ jobs:
     passed: [ set-pipeline ]
     trigger: true
   - in_parallel:
-    - task: gcc12_2_1
-      file: sockets-cpp-git/ci/gcc1221.yml
+    - task: gcc13_1_1
+      file: sockets-cpp-git/ci/gcc1311.yml
+    - task: gcc12_3_0
+      file: sockets-cpp-git/ci/gcc1230.yml
     - task: gcc11_3_0
       file: sockets-cpp-git/ci/gcc1130.yml
     - task: gcc10_3_0
@@ -41,10 +43,10 @@ jobs:
     passed: [ build-matrix ]
     trigger: true
   - in_parallel:
-    - task: gcc_12_2_1_rel
-      file: sockets-cpp-git/ci/gcc1221rel.yml
-    - task: clang14_rel
-      file: sockets-cpp-git/ci/clang14rel.yml
+    - task: gcc_13_1_1_rel
+      file: sockets-cpp-git/ci/gcc1311rel.yml
+    - task: clang16_rel
+      file: sockets-cpp-git/ci/clang16rel.yml
 
 - name: sanitizers
   public: true
