@@ -33,8 +33,8 @@ jobs:
       file: sockets-cpp-git/ci/gcc940.yml
     - task: gcc8_4_0
       file: sockets-cpp-git/ci/gcc840.yml
-    - task: clang14
-      file: sockets-cpp-git/ci/clang14.yml
+    - task: clang16
+      file: sockets-cpp-git/ci/clang16.yml
       
 - name: release
   public: true
