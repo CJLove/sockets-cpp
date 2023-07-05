@@ -59,8 +59,10 @@ jobs:
       privileged: true
       file: sockets-cpp-git/ci/asan.yml
     - task: tsan
+      privileged: true
       file: sockets-cpp-git/ci/tsan.yml
     - task: ubsan
+      privileged: true
       file: sockets-cpp-git/ci/ubsan.yml
 
         
