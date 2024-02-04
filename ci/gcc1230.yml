@@ -8,5 +8,5 @@ inputs:
 - name: sockets-cpp-git
       
 run:
-  path: ./sockets-cpp-git/ci/build.sh
+  path: ./sockets-cpp-git/build.sh
   args: [ "-builddir=build", "-cc=/opt/gcc1230/bin/gcc", "-cxx=/opt/gcc1230/bin/g++" ]   

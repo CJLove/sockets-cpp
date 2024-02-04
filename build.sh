@@ -3,11 +3,12 @@
 function ShowUsage()
 {
     cat <<EOT
-$(basename $0) options
+$(basename "$0") options
     [--builddir=<builddir>]  - name of build directory
     [--cxx=<path/to/cxx>]    - path for CXX environment variable
     [--cc=<path/to/cc>]      - path for CC env variable
     [--cmake=<options>]      - option string to pass to CMake
+    [--concourse]            - building in Concourse
 EOT
     return 0    
 }
@@ -16,6 +17,7 @@ BUILDDIR=build
 PARAM_CC=
 PARAM_CXX=
 PARAM_CMAKE=
+PARAM_CONCOURSE=
 
 while test $# -gt 0; do
     param="$1"
@@ -33,16 +35,19 @@ while test $# -gt 0; do
 
     case $param in
     builddir=*)
-        BUILDDIR=$(echo $param|cut -f2 -d'=')
+        BUILDDIR=$(echo "$param"|cut -f2 -d'=')
         ;;
     cc=*)
-        PARAM_CC=$(echo $param|cut -f2 -d'=')
+        PARAM_CC=$(echo "$param"|cut -f2 -d'=')
         ;;
     cxx=*)
-        PARAM_CXX=$(echo $param|cut -f2 -d'=')
+        PARAM_CXX=$(echo "$param"|cut -f2 -d'=')
         ;;
     cmake=*)
-        PARAM_CMAKE=$(echo $param|cut -f2- -d'=')
+        PARAM_CMAKE=$(echo "$param"|cut -f2- -d'=')
+        ;;
+    concourse*)
+        PARAM_CONCOURSE=1
         ;;
     help|h|?|-?)
         ShowUsage
@@ -61,21 +66,24 @@ echo "PARAM_CC=$PARAM_CC"
 echo "PARAM_CXX=$PARAM_CXX"
 echo "PARAM_CMAKE=$PARAM_CMAKE"
 
-[ ! -d ./sockets-cpp-git ] && { echo "ERROR: repo not cloned!"; exit 1; }
+# If running in a Concourse pipeline then validate the repo was cloned
+if [ -n "$PARAM_CONCOURSE" ]; then
+    [ ! -d ./sockets-cpp-git ] && { echo "ERROR: repo not cloned!"; exit 1; }
 
-# Change to the base directory of the repo
-cd sockets-cpp-git
+    # Change to the base directory of the repo
+    cd sockets-cpp-git || exit
+fi
 
 # Create build directory and switch to it
-mkdir -p $BUILDDIR
-cd $BUILDDIR
+mkdir -p "$BUILDDIR"
+cd "$BUILDDIR" || exit
 
 # Configure via CMake
-if [ -n "$PARAM_CXX" -o -n "$PARAM_CC" ]; then
+if [ -n "$PARAM_CXX" ] || [ -n "$PARAM_CC" ]; then
     # Override CC and CXX
-    CC=$PARAM_CC CXX=$PARAM_CXX cmake $PARAM_CMAKE -DBUILD_EXAMPLES=OFF -DBUILD_TESTS=ON ..
+    CC=$PARAM_CC CXX=$PARAM_CXX cmake "$PARAM_CMAKE" -DBUILD_EXAMPLES=OFF -DBUILD_TESTS=ON ..
 else
-    cmake $PARAM_CMAKE -DBUILD_EXAMPLES=OFF -DBUILD_TESTS=ON ..
+    cmake "$PARAM_CMAKE" -DBUILD_EXAMPLES=OFF -DBUILD_TESTS=ON ..
 fi
 ret=$?
 [ $ret -ne 0 ] && exit $ret
