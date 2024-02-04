@@ -12,6 +12,8 @@ jobs:
     container: 
       image: catthehacker/ubuntu:act-latest
     strategy:
+      fail-fast: true
+      max-parallel: 4
       matrix:
         config:
           - { name: g++13, image: fir.love.io:3005/amd64/sockets-cpp-gcc1311, cc: /usr/bin/gcc, cxx: /usr/bin/g++, build_type: Debug, cppstd: 17 }
@@ -21,13 +23,12 @@ jobs:
           - { name: asan, image: fir.love.io:3005/amd64/sockets-cpp-gcc1311, cc: /usr/bin/gcc, cxx: /usr/bin/g++, build_type: asan, cppstd: 17 }
           - { name: tsan, image: fir.love.io:3005/amd64/sockets-cpp-gcc1311, cc: /usr/bin/gcc, cxx: /usr/bin/g++, build_type: tsan, cppstd: 17 }
           - { name: ubsan, image: fir.love.io:3005/amd64/sockets-cpp-gcc1311, cc: /usr/bin/gcc, cxx: /usr/bin/g++, build_type: ubsan, cppstd: 17 }
-          # - { compiler: gcc, version: 10, build_type: Release, cppstd: 17 }
-          # - { compiler: gcc, version: 11, build_type: Debug, cppstd: 20 }
-          # - { compiler: gcc, version: 12, build_type: Release, cppstd: 20 }
-          # - { compiler: clang, version: 10, build_type: Release, cppstd: 14 }
-          # - { compiler: clang, version: 10, build_type: Debug, cppstd: 17 }
-          # - { compiler: clang, version: 12, build_type: Debug, cppstd: 17 }
-          # - { compiler: clang, version: 15, build_type: Release, cppstd: 20 }
+          - { name: g++8.4.0, image: fir.love.io:3005/amd64/sockets-cpp-gcc840, cc: /opt/gcc840/bin/gcc, cxx: /opt/gcc840/bin/g++, build_type: Debug, cppstd: 14 }
+          - { name: g++8.4.0, image: fir.love.io:3005/amd64/sockets-cpp-gcc840, cc: /opt/gcc840/bin/gcc, cxx: /opt/gcc840/bin/g++, build_type: Debug, cppstd: 14 }
+          - { name: g++10.3.0, image: fir.love.io:3005/amd64/sockets-cpp-gcc1030, cc: /opt/gcc1030/bin/gcc, cxx: /opt/gcc1030/bin/g++, build_type: Debug, cppstd: 14 }
+          - { name: g++11.3.0, image: fir.love.io:3005/amd64/sockets-cpp-gcc1130, cc: /opt/gcc1130/bin/gcc, cxx: /opt/gcc1130/bin/g++, build_type: Debug, cppstd: 14 }
+          - { name: g++12.3.0, image: fir.love.io:3005/amd64/sockets-cpp-gcc1230, cc: /opt/gcc1230/bin/gcc, cxx: /opt/gcc1230/bin/g++, build_type: Debug, cppstd: 20 }
+
     name: "${{ matrix.config.name}} (C++${{ matrix.config.cppstd }}, ${{ matrix.config.build_type }})"
     steps:
       - uses: actions/checkout@v3
