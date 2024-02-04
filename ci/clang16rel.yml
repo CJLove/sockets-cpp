@@ -9,4 +9,4 @@ inputs:
       
 run:
   path: ./sockets-cpp-git/build.sh
-  args: [ "-builddir=build", "-cc=/usr/bin/clang", "-cxx=/usr/bin/clang++", "--cmake=-DCMAKE_BUILD_TYPE=Release" ]   
+  args: [ "--concourse", "-builddir=build", "-cc=/usr/bin/clang", "-cxx=/usr/bin/clang++", "--cmake=-DCMAKE_BUILD_TYPE=Release" ]   

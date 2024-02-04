@@ -9,4 +9,4 @@ inputs:
       
 run:
   path: ./sockets-cpp-git/build.sh
-  args: [ "-builddir=build", "-cc=/opt/gcc1130/bin/gcc", "-cxx=/opt/gcc1130/bin/g++" ]   
+  args: [ "--concourse", "-builddir=build", "-cc=/opt/gcc1130/bin/gcc", "-cxx=/opt/gcc1130/bin/g++" ]   

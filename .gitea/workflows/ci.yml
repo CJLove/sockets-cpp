@@ -18,6 +18,9 @@ jobs:
           - { name: g++13, image: fir.love.io:3005/amd64/sockets-cpp-gcc1311, cc: /usr/bin/gcc, cxx: /usr/bin/g++, build_type: Release, cppstd: 17 }
           - { name: clang16, image: fir.love.io:3005/amd64/sockets-cpp-gcc1311, cc: /usr/bin/clang, cxx: /usr/bin/clang++, build_type: Debug, cppstd: 17 }
           - { name: clang16, image: fir.love.io:3005/amd64/sockets-cpp-gcc1311, cc: /usr/bin/clang, cxx: /usr/bin/clang++, build_type: Release, cppstd: 17 }
+          - { name: asan, image: fir.love.io:3005/amd64/sockets-cpp-gcc1311, cc: /usr/bin/gcc, cxx: /usr/bin/g++, build_type: asan, cppstd: 17 }
+          - { name: tsan, image: fir.love.io:3005/amd64/sockets-cpp-gcc1311, cc: /usr/bin/gcc, cxx: /usr/bin/g++, build_type: tsan, cppstd: 17 }
+          - { name: ubsan, image: fir.love.io:3005/amd64/sockets-cpp-gcc1311, cc: /usr/bin/gcc, cxx: /usr/bin/g++, build_type: ubsan, cppstd: 17 }
           # - { compiler: gcc, version: 10, build_type: Release, cppstd: 17 }
           # - { compiler: gcc, version: 11, build_type: Debug, cppstd: 20 }
           # - { compiler: gcc, version: 12, build_type: Release, cppstd: 20 }
@@ -28,7 +31,7 @@ jobs:
     name: "${{ matrix.config.name}} (C++${{ matrix.config.cppstd }}, ${{ matrix.config.build_type }})"
     steps:
       - uses: actions/checkout@v3
-      - name: Build ${{ matrix.config.name }}
+      - name: Build 
         uses: https://github.com/addnab/docker-run-action@v3
         with:
           image: ${{ matrix.config.image }}
