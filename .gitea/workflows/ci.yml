@@ -40,3 +40,20 @@ jobs:
           run: |
             cd ${{ gitea.workspace }}
             ./build.sh -cc=${{ matrix.config.cc }} --cxx=${{ matrix.config.cxx }} --cmake="-DCMAKE_BUILD_TYPE=${{ matrix.config.cppstd }} -DCMAKE_CXX_STD=${{ matrix.config.cppstd }}"
+
+      - name: Report failure
+        if: failure()
+        uses: tsickert/discord-webhook@v5.4.0
+        with:
+          webhook-url: ${{ secrets.WEBHOOK_URL }}
+          username: Gitea
+          avatar-url: https://about.gitea.com/gitea-text.svg
+          content: "Repo ${{ gitea.repository }} branch ${{ gitea.ref }} build :x:"
+      - name: Report success
+        if: success()
+        uses: tsickert/discord-webhook@v5.4.0
+        with:
+          webhook-url: ${{ secrets.WEBHOOK_URL }}
+          username: Gitea
+          avatar-url: https://about.gitea.com/gitea-text.svg
+          content: "Repo ${{ gitea.repository }} branch ${{ gitea.ref }} build :white_check_mark:"
