@@ -43,6 +43,8 @@ jobs:
 
   results:
     runs-on: ubuntu-latest
+    if: ${{ always() }}
+    needs: build_linux
     steps:
       - name: Report failure
         if: failure()
