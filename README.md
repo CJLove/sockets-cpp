@@ -52,7 +52,7 @@ The UdpSocket class has the following interface for managing the UDP socket:
 UdpSocket(CallbackImpl &callback, SocketOpt *options = nullptr);
 
 // Start a multicast socket
-SocketRet startMcast(const char *mcastAddr, uint16_t port);
+SocketRet startMcast(const char *mcastAddr, uint16_t port, const char *localIpAddr = nullptr);
 
 // Start a unicast client/server socket
 SocketRet startUnicast(const char *remoteAddr, uint16_t localPort, uint16_t port)

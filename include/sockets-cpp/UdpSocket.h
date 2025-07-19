@@ -68,7 +68,7 @@ public:
      * @param port - port number to listen/connect to
      * @return SocketRet - indication that multicast setup was successful
      */
-    SocketRet startMcast(const char *mcastAddr, uint16_t port) {
+    SocketRet startMcast(const char *mcastAddr, uint16_t port, const char *localIpAddr = nullptr) {
         SocketRet ret;
 
         int result = m_socketCore.Initialize();
@@ -164,7 +164,11 @@ public:
         //
         struct ip_mreq mreq { };
         inet_pton(AF_INET,mcastAddr,&mreq.imr_multiaddr);
-        mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+        if (localIpAddr) {
+            inet_pton(AF_INET, localIpAddr, &mreq.imr_interface.s_addr);
+        } else {
+            mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+        }
         if (m_socketCore.SetSockOpt(m_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, reinterpret_cast<char *>(&mreq), sizeof(mreq)) < 0) {
             ret.m_success = false;
 #if defined(FMT_SUPPORT)
@@ -172,6 +176,25 @@ public:
 #else
             std::array<char,MSG_SIZE> msg;
             (void)snprintf(msg.data(),msg.size(),"Error: setsockopt(IP_ADD_MEMBERSHIP) failed: %d",errno);
+            ret.m_msg = msg.data();
+#endif
+            return ret;
+        }
+
+        struct in_addr addr;
+        if (localIpAddr) {
+            inet_pton(AF_INET, localIpAddr, &addr.s_addr);
+        } else {
+            mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+        }
+        if (m_socketCore.SetSockOpt(m_fd, IPPROTO_IP, IP_MULTICAST_IF, &addr, sizeof(addr)) < 0)
+        {
+            ret.m_success = false;
+#if defined(FMT_SUPPORT)
+            ret.m_msg = fmt::format("Error: setsockopt(IP_MULTICAST_IF) failed: errno {}", errno);
+#else
+            std::array<char,MSG_SIZE> msg;
+            (void)snprintf(msg.data(),msg.size(),"Error: setsockopt(IP_MULTICAST_IF) failed: %d", errno);
             ret.m_msg = msg.data();
 #endif
             return ret;
