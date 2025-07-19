@@ -9,7 +9,7 @@
 class McastApp {
 public:
     // UDP Multicast
-    McastApp(const char *multicastAddr, uint16_t port);
+    McastApp(const char *multicastAddr, uint16_t port, const char *localIface);
 
     virtual ~McastApp() = default;
 
@@ -21,8 +21,8 @@ private:
     sockets::UdpSocket<McastApp> m_mcast;
 };
 
-McastApp::McastApp(const char *multicastAddr, uint16_t port) : m_mcast(*this) {
-    sockets::SocketRet ret = m_mcast.startMcast(multicastAddr, port);
+McastApp::McastApp(const char *multicastAddr, uint16_t port, const char *localIface) : m_mcast(*this) {
+    sockets::SocketRet ret = m_mcast.startMcast(multicastAddr, port, localIface);
     if (ret.m_success) {
         std::cout << "Connected to mcast group " << multicastAddr << ":" << port << "\n";
     } else {
@@ -45,14 +45,15 @@ void McastApp::onReceiveData(const char *data, size_t size) {
 }
 
 void usage() {
-    std::cout << "McastApp -m <mcastAddr> -p <port>\n";
+    std::cout << "McastApp -m <mcastAddr> -p <port> -[-l <localAddr>]\n";
 }
 
 int main(int argc, char **argv) {
     int arg = 0;
     const char *addr = nullptr;
+    const char *local = nullptr;
     uint16_t port = 0;
-    while ((arg = getopt(argc, argv, "m:p:?")) != EOF) { // NOLINT
+    while ((arg = getopt(argc, argv, "m:p:l:?")) != EOF) { // NOLINT
         switch (arg) {
         case 'm':
             addr = optarg;
@@ -60,13 +61,16 @@ int main(int argc, char **argv) {
         case 'p':
             port = static_cast<uint16_t>(std::stoul(optarg));
             break;
+        case 'l':
+            local = optarg;
+            break;
         case '?':
             usage();
             exit(1);    // NOLINT
         }
     }
 
-    auto *app = new McastApp(addr, port);
+    auto *app = new McastApp(addr, port, local);
 
     while (true) {
         std::string data;
