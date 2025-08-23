@@ -38,7 +38,7 @@ jobs:
         uses: https://github.com/addnab/docker-run-action@v3
         with:
           image: ${{ matrix.config.image }}
-          options: --rm --volumes-from=${{ env.JOB_CONTAINER_NAME }}
+          options: --rm --volumes-from=${{ env.JOB_CONTAINER_NAME }} --pull  always
           run: |
             cd ${{ gitea.workspace }}
             ./build.sh -cc=${{ matrix.config.cc }} --cxx=${{ matrix.config.cxx }} --cmake="-DCMAKE_BUILD_TYPE=${{ matrix.config.cppstd }} -DCMAKE_CXX_STD=${{ matrix.config.cppstd }}"
