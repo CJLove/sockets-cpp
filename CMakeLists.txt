@@ -79,7 +79,7 @@ endif(NOT CMAKE_BUILD_TYPE)
 
 option(FMT_SUPPORT "Use Fmt for string formatting" ON)
 option(BUILD_EXAMPLES "Build examples" OFF)
-option(BUILD_TESTS "Build unit tests." ON)
+option(BUILD_TESTS "Build unit tests." OFF)
 option(BUILD_COVERAGE "Build for code coverage." OFF)
 option(BUILD_SHARED_LIBS "Build Shared Libraries" ON)
 option(BUILD_STATIC_LIBS "Build Static Libraries" OFF)
@@ -94,7 +94,7 @@ set (CMAKE_MODULE_PATH  ${CMAKE_MODULE_PATH}
 #---------------------------------------------------------------------------------------
 # compiler config
 #---------------------------------------------------------------------------------------
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -115,12 +115,12 @@ include(FetchContent)
 
 if (FMT_SUPPORT)
   # Fmt
-#  find_package(fmt 8.0.1 REQUIRED)
-  FetchContent_Declare(fmt
-    GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-    GIT_TAG master
-  )
-  FetchContent_MakeAvailable(fmt)
+  find_package(fmt REQUIRED)
+  # FetchContent_Declare(fmt
+  #   GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+  #   GIT_TAG master
+  # )
+  # FetchContent_MakeAvailable(fmt)
 
   add_definitions(-DFMT_SUPPORT)
 endif(FMT_SUPPORT)
@@ -130,12 +130,12 @@ find_package(Threads REQUIRED)
 
 if (BUILD_TESTS)
   # Google Test
-  #find_package(GTest REQUIRED)
-  FetchContent_Declare(googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG main
-  )
-  FetchContent_MakeAvailable(googletest)
+  find_package(GTest REQUIRED)
+  # FetchContent_Declare(googletest
+  #   GIT_REPOSITORY https://github.com/google/googletest.git
+  #   GIT_TAG main
+  # )
+  # FetchContent_MakeAvailable(googletest)
 
 endif()
 

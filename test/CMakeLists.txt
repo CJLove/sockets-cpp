@@ -33,7 +33,7 @@ add_executable ( socketTests ${socketTests_SRC} )
 if (FMT_SUPPORT)
     target_link_libraries( socketTests PUBLIC fmt::fmt )
 endif(FMT_SUPPORT)
-target_link_libraries( socketTests PUBLIC gtest gmock Threads::Threads )
+target_link_libraries( socketTests PUBLIC GTest::gtest GTest::gmock Threads::Threads )
 
 
 if (BUILD_COVERAGE)

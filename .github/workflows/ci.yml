@@ -12,15 +12,15 @@ jobs:
       matrix:
         config:
           - { compiler: gcc, version: 10, build_type: Release, cppstd: 17 }
-          - { compiler: gcc, version: 11, build_type: Debug, cppstd: 20 }
-          - { compiler: gcc, version: 12, build_type: Release, cppstd: 20 }
-          - { compiler: gcc, version: 13, build_type: Debug, cppstd: 20 }
-          - { compiler: gcc, version: 13, build_type: Release, cppstd: 20 }
+          - { compiler: gcc, version: 11, build_type: Debug, cppstd: 17 }
+          - { compiler: gcc, version: 12, build_type: Release, cppstd: 17 }
+          - { compiler: gcc, version: 13, build_type: Debug, cppstd: 17 }
           - { compiler: gcc, version: 14, build_type: Debug, cppstd: 20 }
           - { compiler: gcc, version: 14, build_type: Release, cppstd: 20 }
+          - { compiler: gcc, version: 15, build_type: Debug, cppstd: 20 }
+          - { compiler: gcc, version: 15, build_type: Release, cppstd: 20 }
 
-          - { compiler: clang, version: 11, build_type: Release, cppstd: 14 }
-          - { compiler: clang, version: 11, build_type: Debug, cppstd: 17 }
+          - { compiler: clang, version: 11, build_type: Release, cppstd: 17 }
           - { compiler: clang, version: 12, build_type: Debug, cppstd: 17 }
           - { compiler: clang, version: 13, build_type: Debug, cppstd: 17 }
           - { compiler: clang, version: 14, build_type: Debug, cppstd: 17 }
@@ -38,7 +38,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Setup
         run: |
-          apt-get update && apt-get install -y curl git
+          apt-get update && apt-get install -y curl git zip unzip tar pkg-config
           CMAKE_VERSION="3.24.2"
           curl -sSL https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.sh -o install-cmake.sh
           chmod +x install-cmake.sh
@@ -52,10 +52,19 @@ jobs:
           fi
           echo "CC=clang-${{ matrix.config.version }}" >> $GITHUB_ENV
           echo "CXX=clang++-${{ matrix.config.version }}" >> $GITHUB_ENV
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgJsonGlob: '**/vcpkg.json'
+          vcpkgDirectory: '${{ runner.workspace }}/b/vcpkg'
+          vcpkgGitCommitId: 120deac3062162151622ca4860575a33844ba10b
       - name: Build
+        # Note that run-vcpkg sets VCPKG_ROOT so use it to specify the toolchain
+        # and avoid oddities with ${{ runner.workspace }}
         run: |
           mkdir -p build && cd build
           cmake .. \
+            -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
             -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
             -DCMAKE_CXX_STANDARD=${{ matrix.config.cppstd }} \
             -DBUILD_EXAMPLES=${{ matrix.config.examples || 'ON' }} \
@@ -65,16 +74,23 @@ jobs:
 
   build_osx:
     runs-on: macOS-latest
-    name: "OS X Clang (C++14, Release)"
+    name: "OS X Clang (C++17, Release)"
     steps:
       - uses: actions/checkout@v3
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgJsonGlob: '**/vcpkg.json'
+          vcpkgDirectory: '${{ runner.workspace }}/b/vcpkg'
+          vcpkgGitCommitId: 120deac3062162151622ca4860575a33844ba10b
       - name: Build
         run: |
           mkdir -p build && cd build
           cmake .. \
+            -DCMAKE_TOOLCHAIN_FILE=${{ runner.workspace }}/b/vcpkg/scripts/buildsystems/vcpkg.cmake \
             -DCMAKE_PREFIX_PATH=/usr/local/lib/cmake \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_CXX_STANDARD=14 \
+            -DCMAKE_CXX_STANDARD=17 \
             -DFMT_SUPPORT=ON \
             -DBUILD_EXAMPLES=ON \
             -DBUILD_TESTS=ON
@@ -83,7 +99,7 @@ jobs:
 
   build_windows:
     runs-on: windows-latest
-    name: "Windows VS2022 (C++14, Release)"
+    name: "Windows VS2022 (C++17, Release)"
     steps:
       - uses: actions/checkout@v3
       - uses: ilammy/msvc-dev-cmd@v1
@@ -91,14 +107,20 @@ jobs:
         run: |
           echo github.event.action: ${{ github.event.action }}
           echo github.event_name: ${{ github.event_name }}
-      - name: Install dependencies on windows
-        run: |
-          choco install ninja cmake
-          ninja --version
-          cmake --version
+      # - name: Install dependencies on windows
+      #   run: |
+      #     choco install ninja cmake
+      #     ninja --version
+      #     cmake --version
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgJsonGlob: '**/vcpkg.json'
+          vcpkgDirectory: '${{ runner.workspace }}/b/vcpkg'
+          vcpkgGitCommitId: 120deac3062162151622ca4860575a33844ba10b
       - name: Build
         run: |
           mkdir build
           cd build
-          cmake .. -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=14 -DFMT_SUPPORT=OFF -DBUILD_EXAMPLES=ON -DBUILD_TESTS=ON 
+          cmake .. -G "Ninja" -DCMAKE_TOOLCHAIN_FILE=${{ runner.workspace }}/b/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17 -DFMT_SUPPORT=OFF -DBUILD_EXAMPLES=ON -DBUILD_TESTS=ON 
           ninja
