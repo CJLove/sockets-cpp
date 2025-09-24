@@ -18,8 +18,9 @@ jobs:
         config:
           - { name: g++15, image: fir.love.io:3005/amd64/gcc1511, cc: /usr/bin/gcc, cxx: /usr/bin/g++, build_type: Debug, cppstd: 17 }
           - { name: g++15, image: fir.love.io:3005/amd64/gcc1511, cc: /usr/bin/gcc, cxx: /usr/bin/g++, build_type: Release, cppstd: 17 }
-          - { name: clang19, image: fir.love.io:3005/amd64/gcc1511, cc: /usr/bin/clang, cxx: /usr/bin/clang++, build_type: Debug, cppstd: 17 }
-          - { name: clang19, image: fir.love.io:3005/amd64/gcc1511, cc: /usr/bin/clang, cxx: /usr/bin/clang++, build_type: Release, cppstd: 17 }
+          - { name: clang15, image: fir.love.io:3005/amd64/clang15, cc: /usr/bin/clang-15, cxx: /usr/bin/clang++-15, build_type: Debug, cppstd: 17 }
+          - { name: clang20, image: fir.love.io:3005/amd64/gcc1511, cc: /usr/bin/clang, cxx: /usr/bin/clang++, build_type: Debug, cppstd: 17 }
+          - { name: clang20, image: fir.love.io:3005/amd64/gcc1511, cc: /usr/bin/clang, cxx: /usr/bin/clang++, build_type: Release, cppstd: 17 }
           - { name: asan, image: fir.love.io:3005/amd64/gcc1511, cc: /usr/bin/gcc, cxx: /usr/bin/g++, build_type: asan, cppstd: 17 }
           - { name: tsan, image: fir.love.io:3005/amd64/gcc1511, cc: /usr/bin/gcc, cxx: /usr/bin/g++, build_type: tsan, cppstd: 17 }
           - { name: ubsan, image: fir.love.io:3005/amd64/gcc1511, cc: /usr/bin/gcc, cxx: /usr/bin/g++, build_type: ubsan, cppstd: 17 }
