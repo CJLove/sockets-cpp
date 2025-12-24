@@ -10,7 +10,7 @@ jobs:
         shell: bash
     # Use container with docker installed
     container: 
-      image: catthehacker/ubuntu:act-latest
+      image: ghcr.io/catthehacker/ubuntu:act-latest
     strategy:
       fail-fast: true
       max-parallel: 4
@@ -39,7 +39,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build 
-        uses: https://github.com/addnab/docker-run-action@v3
+        uses: https://github.com/maus007/docker-run-action-fork@v1
         with:
           image: ${{ matrix.config.image }}
           options: --rm --volumes-from=${{ env.JOB_CONTAINER_NAME }} --pull always -v /home/vcpkg:/home/vcpkg
