@@ -39,6 +39,12 @@ jobs:
 
     name: "${{ matrix.config.name}} (C++${{ matrix.config.cppstd }}, ${{ matrix.config.build_type }})"
     steps:
+      - name: Setup CA cert
+        run: |
+          ls /etc/certs
+          md5sum /etc/certs/ca.crt
+          cp /etc/certs/ca.crt /usr/local/share/ca-certificates
+          update-ca-certificates
       - uses: actions/checkout@v3
       - name: Build 
         uses: https://github.com/maus007/docker-run-action-fork@v1
