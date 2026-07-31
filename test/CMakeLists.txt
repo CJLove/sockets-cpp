@@ -37,7 +37,7 @@ target_link_libraries( socketTests PUBLIC GTest::gtest GTest::gmock Threads::Thr
 
 
 if (BUILD_COVERAGE)
-    target_link_libraries( socketTests gcov )
+    target_link_libraries( socketTests PUBLIC gcov )
 endif (BUILD_COVERAGE)
 
 add_test (socketTests socketTests )
